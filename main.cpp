@@ -295,6 +295,7 @@ Value* code_EXP(Node* n)
 			}
 			else if (op == "PLUSAN")
 			{
+				cout << "In PLUSAN!!" << endl;
 				Value* tv = builder.CreateAdd(LHS, RHS);
 				Value* l = get_LHS(n->child);
 				return builder.CreateStore(tv, l);
