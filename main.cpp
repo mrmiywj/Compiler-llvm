@@ -79,7 +79,7 @@ vector<typeEnv> typeEnvs;
 map<string, Function*> fEnv;
 map<string, env> funcEnv;
 env nowEnv;
-tyepEnv nowTypeEnv;
+typeEnv nowTypeEnv;
 env globalnEnv;
 typeEnv globalTypeEnv;
 raw_os_ostream out(cout) ;
@@ -375,7 +375,7 @@ void set_Func_Env(Function* f, vector<string> argsName, vector<Type*> argsType ,
 	BasicBlock *BB = BasicBlock::Create(context, "entry", f);
 	builder.SetInsertPoint(BB);
 	int i = 0;
-	nowEnv.erase();
+	nowEnv = globalEnv;
 	//AllocaInst* alloca = builder.CreateAlloca(argsType[0], 0, argsName[0].c_str());
 	//builder.CreateStore(f->arg_begin(), alloca);
 	for (Function::arg_iterator AI = f->arg_begin(); i!= argsType.size(); ++AI,++i)
@@ -385,8 +385,8 @@ void set_Func_Env(Function* f, vector<string> argsName, vector<Type*> argsType ,
 		alloca->print(out);
 		AI->setName(argsName[i].c_str());
 		builder.CreateStore(AI, alloca);
-		fenv[argsName[i]] = alloca;
-		now[argsName[i]] = alloca;
+		//fenv[argsName[i]] = alloca;
+		nowEnv[argsName[i]] = alloca;
 	}
 }
 
