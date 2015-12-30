@@ -152,7 +152,7 @@ Value* code_EXP(Node* n)
 				return builder.CreateLoad(v, n->child->content);
 			}
 		}
-		else if (childNextToken == "LP")
+		else if (strcmp("LP",n->child->next->token) == 0)
 		{
 			string funcName = n->child->content;
 			Function* f = module->getFunction(funcName);
