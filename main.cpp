@@ -607,6 +607,31 @@ void code_STMT(Node* n,Function* f)
 		cout << "I'm in STMT EXP!!" << endl;
 		Value* v = code_EXP(n->child);
 	}
+	else if (tmp_token == "IF")
+	{
+		Value* conV = code_EXP(n->child->next->next);
+		Function* f = builder.GetInsertBlock()->getParent();
+		BasicBlock *thenBB = BasicBlock::Create(context, "then", f);
+		BasicBlock *elseBB = BasicBlock::Create(context, "else");
+		BasicBlock *mergBB = BasicBlock::Create(context, "ifcont");
+		builder.Create(condV, thenBB, elseBB);
+		bool flag = (n->child->next->next->next->next->next->child != NULL);
+		buidler.SetInsertPoint(thenBB);
+		code_STMT(n->child->next->next->next->next);
+		builder.CreateBr(mergeBB);
+		thenBB = builder.GetInsertBlock();
+		f->getBasicBlockList().push_back(elseBB);
+		builder.SetInsertPoint(elseBB);
+		if (flag)
+		{
+			Node* estmt = n->child->next->next->next->next->next->child->next;
+			code_STMT(estmt);
+		}
+		builder.CreateBr(mergeBB);
+		elseBB = builder.GetInsertBlock();
+		f->getBasicBlockList().push_back(mergeBB);
+		buidler.setInsertPoint(mergeBB);
+	}
 }
 
 
