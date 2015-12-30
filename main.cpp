@@ -550,6 +550,8 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
 	AllocaInst* inst = builder.CreateAlloca(t,NULL,n->child->child->content);
 	//env now = envs.back();
 	nowEnv[string(n->child->child->content)] = inst;
+	if (nowEnv[string(n->child->child->content)])
+		cout << "Insert succesully"<<n->child->child->content;
 	//envs.pop_back();
 	//envs.push_back(now);
 	//cout << "In DEC_INNER"<<envs.size() <<" "<<n->child->child->content <<now[string(n->child->child->content)]<< envs.back()[string(n->child->child->content)]<<endl;
