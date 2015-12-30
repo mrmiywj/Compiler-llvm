@@ -83,9 +83,9 @@ raw_os_ostream out(cout) ;
 
 AllocaInst* CreateEntryBlockAlloca(Function* f,string varName, Type* t)
 {
-	//f->getEntryBlock().begin();
-	//IRBuilder<> tmpB(&(f->getEntryBlock()), f->getEntryBlock().begin());
-	//return tmpB.CreateAlloca(t, 0, varName.c_str());
+	f->getEntryBlock().begin();
+	IRBuilder<> tmpB(&(f->getEntryBlock()), f->getEntryBlock().begin());
+	return tmpB.CreateAlloca(t, 0, varName.c_str());
 	return NULL;
 }
 
