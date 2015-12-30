@@ -609,15 +609,15 @@ void code_STMT(Node* n,Function* f)
 	}
 	else if (tmp_token == "IF")
 	{
-		Value* conV = code_EXP(n->child->next->next);
+		Value* condV = code_EXP(n->child->next->next);
 		Function* f = builder.GetInsertBlock()->getParent();
 		BasicBlock *thenBB = BasicBlock::Create(context, "then", f);
 		BasicBlock *elseBB = BasicBlock::Create(context, "else");
-		BasicBlock *mergBB = BasicBlock::Create(context, "ifcont");
-		builder.Create(condV, thenBB, elseBB);
+		BasicBlock *mergeBB = BasicBlock::Create(context, "ifcont");
+		builder.CreateCondBr(condV, thenBB, elseBB);
 		bool flag = (n->child->next->next->next->next->next->child != NULL);
-		buidler.SetInsertPoint(thenBB);
-		code_STMT(n->child->next->next->next->next);
+		builder.SetInsertPoint(thenBB);
+		code_STMT(n->child->next->next->next->next, f);
 		builder.CreateBr(mergeBB);
 		thenBB = builder.GetInsertBlock();
 		f->getBasicBlockList().push_back(elseBB);
@@ -630,7 +630,7 @@ void code_STMT(Node* n,Function* f)
 		builder.CreateBr(mergeBB);
 		elseBB = builder.GetInsertBlock();
 		f->getBasicBlockList().push_back(mergeBB);
-		buidler.setInsertPoint(mergeBB);
+		builder.setInsertPoint(mergeBB);
 	}
 }
 
