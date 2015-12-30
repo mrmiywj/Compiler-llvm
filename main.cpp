@@ -92,7 +92,7 @@ AllocaInst* CreateEntryBlockAlloca(Function* f,string varName, Type* t)
 llvm::Value* code_PROGRAM(Node* n)
 {
 	return code_EXTDEFS(n->child);
-	
+
 }
 
 Value* get_LHS(Node* n)
@@ -352,13 +352,13 @@ void set_Func_Env(Function* f, vector<string> argsName, vector<Type*> argsType ,
 	//builder.CreateStore(f->arg_begin(), alloca);
 	for (Function::arg_iterator AI = f->arg_begin(); i!= argsType.size(); ++AI,++i)
 	{
-		//AI->print(out);
+		AI->print(out);
 		AllocaInst* alloca = builder.CreateAlloca(argsType[i], 0, argsName[i].c_str());
-		//alloca->print(out);
-		//AI->setName(argsName[i].c_str());
-		//builder.CreateStore(AI, alloca);
-		//fenv[argsName[i]] = alloca;
-		//now[argsName[i]] = alloca;
+		alloca->print(out);
+		AI->setName(argsName[i].c_str());
+		builder.CreateStore(AI, alloca);
+		fenv[argsName[i]] = alloca;
+		now[argsName[i]] = alloca;
 	}
 	funcEnv[name] = fenv;
 	envs.push_back(now);
@@ -529,7 +529,7 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
 	envs.pop_back();
 	envs.push_back(now);
 	cout << "In DEC_INNER"<<envs.size() <<" "<<n->child->child->content <<now[string(n->child->child->content)]<< envs.back()[string(n->child->child->content)]<<endl;
-	if (n->child->next == NULL) 
+	if (n->child->next == NULL)
 	{
 		return;
 	}
@@ -593,7 +593,7 @@ int main(int argc, char* argv[])
     Node* head;
     fout.open("out.ll");
     if (argc == 2)
-    { 
+    {
         head = parse(argv[1]);
     }
 	walkThrough(head, 1);
