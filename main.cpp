@@ -625,12 +625,12 @@ void code_STMT(Node* n,Function* f)
 		if (flag)
 		{
 			Node* estmt = n->child->next->next->next->next->next->child->next;
-			code_STMT(estmt);
+			code_STMT(estmt,f );
 		}
 		builder.CreateBr(mergeBB);
 		elseBB = builder.GetInsertBlock();
 		f->getBasicBlockList().push_back(mergeBB);
-		builder.setInsertPoint(mergeBB);
+		builder.SetInsertPoint(mergeBB);
 	}
 }
 
