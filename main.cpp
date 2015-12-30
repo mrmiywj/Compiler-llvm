@@ -104,6 +104,23 @@ Value* get_LHS(Node* n)
 	}
 }
 
+vector<Value*> code_ARGS(Node* n)
+{
+	vector<Value*> ret;
+	n = n->child;
+	if (n->child == NULL)
+		return ret;
+	while (true)
+	{
+		Value* tmp = code_EXP(n);
+		ret.push_back(tmp);
+		if (n->next == NULL)
+			break;
+		n = n->next->next->child;
+	}
+	return ret;
+}
+
 Value* code_EXP(Node* n)
 {
 	string childToken = n->child->token;
@@ -124,6 +141,7 @@ Value* code_EXP(Node* n)
 	}
 	else if (childToken == "ID")
 	{
+		string childNextToken = n->child->next->token;
 		if (n->child->next == NULL)
 		{
 			env envNow = envs.back();
@@ -133,6 +151,15 @@ Value* code_EXP(Node* n)
 			{
 				return builder.CreateLoad(v, n->child->content);
 			}
+		}
+		else if (childNextToken == "LP")
+		{
+			string funcName = n->child->content;
+			Function* f = module->getFunction(funcName);
+			if (f == 0)
+				return errorOccur("No such function");
+			vector<Value* > args = code_ARGS(n->child->next->next);
+			return builder.CreateCall(f, args, "calltmp");
 		}
 	}
 	else if (childToken == "EXP")
@@ -382,10 +409,6 @@ llvm::Value* code_EXTDEF(Node* n)
 		FunctionType* funcType = FunctionType::get(retType, argsType, false);
 		//funcType->print(out);
 		Function* f = Function::Create(funcType, Function::ExternalLinkage, funcName.c_str(), module);
-		for (auto &a : f->args())
-		{
-
-		}
 		unsigned idx = 0;
 		cout << "Function Def::"<<argsName.size()<<" and "<<argsType.size();
 		cout << f->arg_size() << endl;
@@ -399,6 +422,7 @@ llvm::Value* code_EXTDEF(Node* n)
 		//cout << endl;
 		fEnv[funcName] = f;
 		code_STMTBLOCK(n->child->next->next, f);
+		envs.pop_back();
 	}
 	else if (sndContent == "EXTVARS")
 	{
