@@ -80,7 +80,7 @@ map<string, Function*> fEnv;
 map<string, env> funcEnv;
 env nowEnv;
 typeEnv nowTypeEnv;
-env globalnEnv;
+env globalEnv;
 typeEnv globalTypeEnv;
 raw_os_ostream out(cout) ;
 
@@ -399,11 +399,6 @@ llvm::Value* code_EXTDEF(Node* n)
 		Type* retType = code_SPEC(n->child);
 		string funcName = code_FUN_Name(n->child->next);
 		std::vector<Type*> argsType = code_FUNC_ARG_Type(n->child->next);
-		for (auto& i : argsType)
-		{
-			//cout << "Herere !";
-			//i->print(out);
-		}
 		std::vector<string> argsName = code_FUNC_ARG_Name(n->child->next);
 		FunctionType* funcType = FunctionType::get(retType, argsType, false);
 		//funcType->print(out);
@@ -630,7 +625,7 @@ void code_STMT(Node* n,Function* f)
 	}
 	else if (tmp_token == "FOR")
 	{
-		A
+		
 	}
 }
 
