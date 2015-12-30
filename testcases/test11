@@ -1,0 +1,20 @@
+int num=1,a[1000];
+
+int divide(int low, int high)
+{
+	int temp=a[low];
+	write(temp);
+	return 0;
+}
+  
+int main()
+{
+	int i;
+	read(num);
+	for(i=0;i<num;++i)
+	{
+		read(a[i]);
+	}
+	divide(0,num-1);
+	return 0;
+}

@@ -1,0 +1,525 @@
+PROGRAM
+  EXTDEFS
+    EXTDEF
+      SPEC
+        TYPE  int
+      EXTVARS
+        DEC
+          VAR
+            VAR
+              ID  a
+            LB  [
+            INT  100
+            RB  ]
+        COMMA  ,
+        EXTVARS
+          DEC
+            VAR
+              VAR
+                ID  v
+              LB  [
+              INT  100
+              RB  ]
+          COMMA  ,
+          EXTVARS
+            DEC
+              VAR
+                VAR
+                  ID  c
+                LB  [
+                INT  100
+                RB  ]
+            COMMA  ,
+            EXTVARS
+              DEC
+                VAR
+                  VAR
+                    ID  b
+                  LB  [
+                  INT  100
+                  RB  ]
+              COMMA  ,
+              EXTVARS
+                DEC
+                  VAR
+                    ID  s
+                  ASSIGNOP  =
+                  INIT
+                    EXP
+                      INT  0
+                COMMA  ,
+                EXTVARS
+                  DEC
+                    VAR
+                      ID  n
+      SEMI  ;
+    EXTDEFS
+      EXTDEF
+        SPEC
+          TYPE  int
+        FUNC
+          ID  print
+          LP  (
+          PARAS
+          RP  )
+        STMTBLOCK
+          LC  {
+          DEFS
+            DECS
+              SPEC
+                TYPE  int
+              DECS
+                DEC
+                  VAR
+                    ID  i
+              SEMI  ;
+            DEFS
+          STMTS
+            STMT
+              FOR  for
+              LP  (
+              EXP
+                EXP
+                  ID  i
+                ASSIGNOP  =
+                EXP
+                  INT  1
+              SEMI  ;
+              EXP
+                EXP
+                  ID  i
+                LT  <
+                EXP
+                  ID  n
+              SEMI  ;
+              EXP
+                INCR  ++
+                EXP
+                  ID  i
+              RP  )
+              STMT
+                STMTBLOCK
+                  LC  {
+                  DEFS
+                  STMTS
+                    STMT
+                      EXP
+                        ID  write
+                        LP  (
+                        ARGS
+                          EXP
+                            ID  b
+                            ARRS
+                              LB  [
+                              EXP
+                                ID  i
+                              RB  ]
+                              ARRS
+                        RP  )
+                      SEMI  ;
+                    STMTS
+                  RC  }
+            STMTS
+              STMT
+                EXP
+                  ID  write
+                  LP  (
+                  ARGS
+                    EXP
+                      ID  b
+                      ARRS
+                        LB  [
+                        EXP
+                          ID  n
+                        RB  ]
+                        ARRS
+                  RP  )
+                SEMI  ;
+              STMTS
+                STMT
+                  RETURN  return
+                  EXP
+                    INT  0
+                  SEMI  ;
+                STMTS
+          RC  }
+      EXTDEFS
+        EXTDEF
+          SPEC
+            TYPE  int
+          FUNC
+            ID  DFS
+            LP  (
+            PARAS
+              PARA
+                SPEC
+                  TYPE  int
+                VAR
+                  ID  x
+            RP  )
+          STMTBLOCK
+            LC  {
+            DEFS
+              DECS
+                SPEC
+                  TYPE  int
+                DECS
+                  DEC
+                    VAR
+                      ID  i
+                  COMMA  ,
+                  DECS
+                    DEC
+                      VAR
+                        ID  j
+                    COMMA  ,
+                    DECS
+                      DEC
+                        VAR
+                          ID  k
+                SEMI  ;
+              DEFS
+            STMTS
+              STMT
+                IF  if
+                LP  (
+                EXP
+                  EXP
+                    ID  x
+                  GT  >
+                  EXP
+                    ID  n
+                RP  )
+                STMT
+                  STMTBLOCK
+                    LC  {
+                    DEFS
+                    STMTS
+                      STMT
+                        IF  if
+                        LP  (
+                        EXP
+                          EXP
+                            ID  s
+                          LT  <
+                          EXP
+                            INT  3
+                        RP  )
+                        STMT
+                          EXP
+                            ID  print
+                            LP  (
+                            ARGS
+                              EXP
+                            RP  )
+                          SEMI  ;
+                        ESTMT
+                      STMTS
+                        STMT
+                          EXP
+                            INCR  ++
+                            EXP
+                              ID  s
+                          SEMI  ;
+                        STMTS
+                          STMT
+                            RETURN  return
+                            EXP
+                              INT  0
+                            SEMI  ;
+                          STMTS
+                    RC  }
+                ESTMT
+              STMTS
+                STMT
+                  FOR  for
+                  LP  (
+                  EXP
+                    EXP
+                      ID  i
+                    ASSIGNOP  =
+                    EXP
+                      INT  1
+                  SEMI  ;
+                  EXP
+                    EXP
+                      ID  i
+                    LT  <
+                    EXP
+                      EXP
+                        ID  n
+                      PLUS  +
+                      EXP
+                        INT  1
+                  SEMI  ;
+                  EXP
+                    INCR  ++
+                    EXP
+                      ID  i
+                  RP  )
+                  STMT
+                    STMTBLOCK
+                      LC  {
+                      DEFS
+                      STMTS
+                        STMT
+                          IF  if
+                          LP  (
+                          EXP
+                            EXP
+                              EXP
+                                LOGNOT  !
+                                EXP
+                                  ID  a
+                                  ARRS
+                                    LB  [
+                                    EXP
+                                      ID  i
+                                    RB  ]
+                                    ARRS
+                              LOGAND  &&
+                              EXP
+                                LOGNOT  !
+                                EXP
+                                  ID  v
+                                  ARRS
+                                    LB  [
+                                    EXP
+                                      EXP
+                                        ID  i
+                                      PLUS  +
+                                      EXP
+                                        ID  x
+                                    RB  ]
+                                    ARRS
+                            LOGAND  &&
+                            EXP
+                              LOGNOT  !
+                              EXP
+                                ID  c
+                                ARRS
+                                  LB  [
+                                  EXP
+                                    EXP
+                                      EXP
+                                        ID  i
+                                      MINUS  -
+                                      EXP
+                                        ID  x
+                                    PLUS  +
+                                    EXP
+                                      INT  15
+                                  RB  ]
+                                  ARRS
+                          RP  )
+                          STMT
+                            STMTBLOCK
+                              LC  {
+                              DEFS
+                              STMTS
+                                STMT
+                                  EXP
+                                    EXP
+                                      ID  a
+                                      ARRS
+                                        LB  [
+                                        EXP
+                                          ID  i
+                                        RB  ]
+                                        ARRS
+                                    ASSIGNOP  =
+                                    EXP
+                                      INT  1
+                                  SEMI  ;
+                                STMTS
+                                  STMT
+                                    EXP
+                                      EXP
+                                        ID  v
+                                        ARRS
+                                          LB  [
+                                          EXP
+                                            EXP
+                                              ID  i
+                                            PLUS  +
+                                            EXP
+                                              ID  x
+                                          RB  ]
+                                          ARRS
+                                      ASSIGNOP  =
+                                      EXP
+                                        INT  1
+                                    SEMI  ;
+                                  STMTS
+                                    STMT
+                                      EXP
+                                        EXP
+                                          ID  c
+                                          ARRS
+                                            LB  [
+                                            EXP
+                                              EXP
+                                                EXP
+                                                  ID  i
+                                                MINUS  -
+                                                EXP
+                                                  ID  x
+                                              PLUS  +
+                                              EXP
+                                                INT  15
+                                            RB  ]
+                                            ARRS
+                                        ASSIGNOP  =
+                                        EXP
+                                          INT  1
+                                      SEMI  ;
+                                    STMTS
+                                      STMT
+                                        EXP
+                                          EXP
+                                            ID  b
+                                            ARRS
+                                              LB  [
+                                              EXP
+                                                ID  x
+                                              RB  ]
+                                              ARRS
+                                          ASSIGNOP  =
+                                          EXP
+                                            ID  i
+                                        SEMI  ;
+                                      STMTS
+                                        STMT
+                                          EXP
+                                            ID  DFS
+                                            LP  (
+                                            ARGS
+                                              EXP
+                                                EXP
+                                                  ID  x
+                                                PLUS  +
+                                                EXP
+                                                  INT  1
+                                            RP  )
+                                          SEMI  ;
+                                        STMTS
+                                          STMT
+                                            EXP
+                                              EXP
+                                                ID  a
+                                                ARRS
+                                                  LB  [
+                                                  EXP
+                                                    ID  i
+                                                  RB  ]
+                                                  ARRS
+                                              ASSIGNOP  =
+                                              EXP
+                                                INT  0
+                                            SEMI  ;
+                                          STMTS
+                                            STMT
+                                              EXP
+                                                EXP
+                                                  ID  v
+                                                  ARRS
+                                                    LB  [
+                                                    EXP
+                                                      EXP
+                                                        ID  i
+                                                      PLUS  +
+                                                      EXP
+                                                        ID  x
+                                                    RB  ]
+                                                    ARRS
+                                                ASSIGNOP  =
+                                                EXP
+                                                  INT  0
+                                              SEMI  ;
+                                            STMTS
+                                              STMT
+                                                EXP
+                                                  EXP
+                                                    ID  c
+                                                    ARRS
+                                                      LB  [
+                                                      EXP
+                                                        EXP
+                                                          EXP
+                                                            ID  i
+                                                          MINUS  -
+                                                          EXP
+                                                            ID  x
+                                                        PLUS  +
+                                                        EXP
+                                                          INT  15
+                                                      RB  ]
+                                                      ARRS
+                                                  ASSIGNOP  =
+                                                  EXP
+                                                    INT  0
+                                                SEMI  ;
+                                              STMTS
+                              RC  }
+                          ESTMT
+                        STMTS
+                      RC  }
+                STMTS
+                  STMT
+                    RETURN  return
+                    EXP
+                      INT  0
+                    SEMI  ;
+                  STMTS
+            RC  }
+        EXTDEFS
+          EXTDEF
+            SPEC
+              TYPE  int
+            FUNC
+              ID  main
+              LP  (
+              PARAS
+              RP  )
+            STMTBLOCK
+              LC  {
+              DEFS
+              STMTS
+                STMT
+                  EXP
+                    ID  read
+                    LP  (
+                    ARGS
+                      EXP
+                        ID  n
+                    RP  )
+                  SEMI  ;
+                STMTS
+                  STMT
+                    EXP
+                      ID  DFS
+                      LP  (
+                      ARGS
+                        EXP
+                          INT  1
+                      RP  )
+                    SEMI  ;
+                  STMTS
+                    STMT
+                      EXP
+                        ID  write
+                        LP  (
+                        ARGS
+                          EXP
+                            ID  s
+                        RP  )
+                      SEMI  ;
+                    STMTS
+                      STMT
+                        RETURN  return
+                        EXP
+                          INT  0
+                        SEMI  ;
+                      STMTS
+              RC  }
+          EXTDEFS

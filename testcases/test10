@@ -1,0 +1,48 @@
+int a[1000];
+int num;
+
+int divide(int low, int high)
+{
+	int temp=a[low];
+	for(;low!=high;)
+	{
+		for(;low<high && a[high]>=temp;)
+		{
+			--high;
+		}
+		if(low<high)
+		{
+			a[low]=a[high];
+			++low;
+		}
+		for(;low<high && a[low]<=temp;)
+		{
+			++low;
+		}
+		if(low<high)
+		{
+			a[high]=a[low];
+			--high;
+		}
+	}
+	a[low]=temp;
+	return low;
+}
+
+int main()
+{
+	int i;
+	read(num);
+	for(i=0;i<num;++i)
+	{
+		read(a[i]);
+	}
+	divide(0,num-1);
+	write(num);
+	for(i=0;i<num;++i)
+	{
+		write(a[i]);
+	}
+	write(a[i]);
+	return 0;
+}

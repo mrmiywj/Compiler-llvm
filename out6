@@ -1,0 +1,327 @@
+PROGRAM
+  EXTDEFS
+    EXTDEF
+      SPEC
+        STSPEC
+          STRUCT  struct
+          OPTTAG
+            ID  acrossthegreatxxxxwallwecanreacheverycornerintheworld
+          LC  {
+          DEFS
+            DECS
+              SPEC
+                TYPE  int
+              DECS
+                DEC
+                  VAR
+                    ID  sigcomm
+              SEMI  ;
+            DEFS
+          RC  }
+      EXTVARS
+      SEMI  ;
+    EXTDEFS
+      EXTDEF
+        SPEC
+          STSPEC
+            STRUCT  struct
+            OPTTAG
+              ID  haoehaoehaoewozhendehaoe
+            LC  {
+            DEFS
+              DECS
+                SPEC
+                  TYPE  int
+                DECS
+                  DEC
+                    VAR
+                      ID  huiguorou
+                SEMI  ;
+              DEFS
+                DECS
+                  SPEC
+                    TYPE  int
+                  DECS
+                    DEC
+                      VAR
+                        ID  huoguo
+                  SEMI  ;
+                DEFS
+                  DECS
+                    SPEC
+                      TYPE  int
+                    DECS
+                      DEC
+                        VAR
+                          ID  shaokao
+                    SEMI  ;
+                  DEFS
+                    DECS
+                      SPEC
+                        TYPE  int
+                      DECS
+                        DEC
+                          VAR
+                            ID  tiaoshuitu
+                      SEMI  ;
+                    DEFS
+            RC  }
+        EXTVARS
+        SEMI  ;
+      EXTDEFS
+        EXTDEF
+          SPEC
+            STSPEC
+              STRUCT  struct
+              OPTTAG
+                ID  double0
+              LC  {
+              DEFS
+                DECS
+                  SPEC
+                    TYPE  int
+                  DECS
+                    DEC
+                      VAR
+                        ID  GOOGLE
+                  SEMI  ;
+                DEFS
+                  DECS
+                    SPEC
+                      TYPE  int
+                    DECS
+                      DEC
+                        VAR
+                          ID  FACEBOOK
+                    SEMI  ;
+                  DEFS
+                    DECS
+                      SPEC
+                        TYPE  int
+                      DECS
+                        DEC
+                          VAR
+                            ID  MICROSOFT
+                      SEMI  ;
+                    DEFS
+                      DECS
+                        SPEC
+                          TYPE  int
+                        DECS
+                          DEC
+                            VAR
+                              ID  GROUPON
+                        SEMI  ;
+                      DEFS
+                        DECS
+                          SPEC
+                            TYPE  int
+                          DECS
+                            DEC
+                              VAR
+                                ID  YAHOO
+                          SEMI  ;
+                        DEFS
+              RC  }
+          EXTVARS
+          SEMI  ;
+        EXTDEFS
+          EXTDEF
+            SPEC
+              STSPEC
+                STRUCT  struct
+                ID  acrossthegreatxxxxwallwecanreacheverycornerintheworld
+            EXTVARS
+              DEC
+                VAR
+                  ID  A
+            SEMI  ;
+          EXTDEFS
+            EXTDEF
+              SPEC
+                STSPEC
+                  STRUCT  struct
+                  ID  acrossthegreatxxxxwallwecanreacheverycornerintheworld
+              EXTVARS
+                DEC
+                  VAR
+                    ID  B
+              SEMI  ;
+            EXTDEFS
+              EXTDEF
+                SPEC
+                  STSPEC
+                    STRUCT  struct
+                    ID  haoehaoehaoewozhendehaoe
+                EXTVARS
+                  DEC
+                    VAR
+                      ID  C
+                SEMI  ;
+              EXTDEFS
+                EXTDEF
+                  SPEC
+                    STSPEC
+                      STRUCT  struct
+                      ID  double0
+                  EXTVARS
+                    DEC
+                      VAR
+                        ID  R
+                  SEMI  ;
+                EXTDEFS
+                  EXTDEF
+                    SPEC
+                      STSPEC
+                        STRUCT  struct
+                        ID  double0
+                    EXTVARS
+                      DEC
+                        VAR
+                          ID  G
+                    SEMI  ;
+                  EXTDEFS
+                    EXTDEF
+                      SPEC
+                        STSPEC
+                          STRUCT  struct
+                          ID  double0
+                      EXTVARS
+                        DEC
+                          VAR
+                            ID  T
+                      SEMI  ;
+                    EXTDEFS
+                      EXTDEF
+                        SPEC
+                          TYPE  int
+                        FUNC
+                          ID  main
+                          LP  (
+                          PARAS
+                          RP  )
+                        STMTBLOCK
+                          LC  {
+                          DEFS
+                          STMTS
+                            STMT
+                              EXP
+                                ID  read
+                                LP  (
+                                ARGS
+                                  EXP
+                                    EXP
+                                      ID  A
+                                    DOT  .
+                                    EXP
+                                      ID  sigcomm
+                                RP  )
+                              SEMI  ;
+                            STMTS
+                              STMT
+                                EXP
+                                  ID  read
+                                  LP  (
+                                  ARGS
+                                    EXP
+                                      EXP
+                                        ID  B
+                                      DOT  .
+                                      EXP
+                                        ID  sigcomm
+                                  RP  )
+                                SEMI  ;
+                              STMTS
+                                STMT
+                                  EXP
+                                    ID  read
+                                    LP  (
+                                    ARGS
+                                      EXP
+                                        EXP
+                                          ID  C
+                                        DOT  .
+                                        EXP
+                                          ID  tiaoshuitu
+                                    RP  )
+                                  SEMI  ;
+                                STMTS
+                                  STMT
+                                    EXP
+                                      EXP
+                                        ID  R
+                                      DOT  .
+                                      EXP
+                                        EXP
+                                          ID  YAHOO
+                                        ASSIGNOP  =
+                                        EXP
+                                          MINUS  -
+                                          EXP
+                                            INT  1234567890
+                                    SEMI  ;
+                                  STMTS
+                                    STMT
+                                      EXP
+                                        ID  write
+                                        LP  (
+                                        ARGS
+                                          EXP
+                                            EXP
+                                              ID  R
+                                            DOT  .
+                                            EXP
+                                              ID  YAHOO
+                                        RP  )
+                                      SEMI  ;
+                                    STMTS
+                                      STMT
+                                        EXP
+                                          ID  write
+                                          LP  (
+                                          ARGS
+                                            EXP
+                                              EXP
+                                                ID  A
+                                              DOT  .
+                                              EXP
+                                                ID  sigcomm
+                                          RP  )
+                                        SEMI  ;
+                                      STMTS
+                                        STMT
+                                          EXP
+                                            ID  write
+                                            LP  (
+                                            ARGS
+                                              EXP
+                                                EXP
+                                                  ID  B
+                                                DOT  .
+                                                EXP
+                                                  ID  sigcomm
+                                            RP  )
+                                          SEMI  ;
+                                        STMTS
+                                          STMT
+                                            EXP
+                                              ID  write
+                                              LP  (
+                                              ARGS
+                                                EXP
+                                                  EXP
+                                                    ID  C
+                                                  DOT  .
+                                                  EXP
+                                                    ID  tiaoshuitu
+                                              RP  )
+                                            SEMI  ;
+                                          STMTS
+                                            STMT
+                                              RETURN  return
+                                              EXP
+                                                INT  0
+                                              SEMI  ;
+                                            STMTS
+                          RC  }
+                      EXTDEFS
