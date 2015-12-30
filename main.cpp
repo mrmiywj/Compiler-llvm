@@ -78,6 +78,10 @@ vector<env> envs;
 vector<typeEnv> typeEnvs;
 map<string, Function*> fEnv;
 map<string, env> funcEnv;
+env nowEnv;
+tyepEnv nowTypeEnv;
+env globalnEnv;
+typeEnv globalTypeEnv;
 raw_os_ostream out(cout) ;
 
 
@@ -100,7 +104,7 @@ Value* get_LHS(Node* n)
 	env now = envs.back();
 	if (n->next == NULL)
 	{
-		return now[string(n->child->content)];
+		return nowEnv[string(n->child->content)];
 	}
 }
 
@@ -143,8 +147,7 @@ Value* code_EXP(Node* n)
 	{
 		if (n->child->next == NULL)
 		{
-			env envNow = envs.back();
-			Value* v = envNow[string(n->child->content)];
+			Value* v = nowEnv[string(n->child->content)];
 			cout << "In exp ID::" << n->child->content << endl;
 			if (v != NULL)
 			{
@@ -372,8 +375,7 @@ void set_Func_Env(Function* f, vector<string> argsName, vector<Type*> argsType ,
 	BasicBlock *BB = BasicBlock::Create(context, "entry", f);
 	builder.SetInsertPoint(BB);
 	int i = 0;
-	env fenv = funcEnv[name];
-	env now = envs.back();
+	nowEnv.erase();
 	//AllocaInst* alloca = builder.CreateAlloca(argsType[0], 0, argsName[0].c_str());
 	//builder.CreateStore(f->arg_begin(), alloca);
 	for (Function::arg_iterator AI = f->arg_begin(); i!= argsType.size(); ++AI,++i)
@@ -386,8 +388,6 @@ void set_Func_Env(Function* f, vector<string> argsName, vector<Type*> argsType ,
 		fenv[argsName[i]] = alloca;
 		now[argsName[i]] = alloca;
 	}
-	funcEnv[name] = fenv;
-	envs.push_back(now);
 }
 
 llvm::Value* code_EXTDEF(Node* n)
@@ -421,7 +421,6 @@ llvm::Value* code_EXTDEF(Node* n)
 		//cout << endl;
 		fEnv[funcName] = f;
 		code_STMTBLOCK(n->child->next->next, f);
-		envs.pop_back();
 	}
 	else if (sndContent == "EXTVARS")
 	{
@@ -547,11 +546,8 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
 	string name = n->child->child->content;
 	cout << n->child->token << " " << n->child->child->content<<endl;
 	AllocaInst* inst = builder.CreateAlloca(t,NULL,n->child->child->content);
-	env now = envs.back();
-	now[string(n->child->child->content)] = inst;
-	envs.pop_back();
-	envs.push_back(now);
-	cout << "In DEC_INNER"<<envs.size() <<" "<<n->child->child->content <<now[string(n->child->child->content)]<< envs.back()[string(n->child->child->content)]<<endl;
+	nowEnv[string(n->child->child->content)] = inst;
+	//cout << "In DEC_INNER"<<envs.size() <<" "<<n->child->child->content <<now[string(n->child->child->content)]<< envs.back()[string(n->child->child->content)]<<endl;
 	if (n->child->next == NULL)
 	{
 		return;
@@ -632,6 +628,10 @@ void code_STMT(Node* n,Function* f)
 		f->getBasicBlockList().push_back(mergeBB);
 		builder.SetInsertPoint(mergeBB);
 	}
+	else if (tmp_token == "FOR")
+	{
+		A
+	}
 }
 
 
@@ -650,8 +650,6 @@ int main(int argc, char* argv[])
     module = new Module("Simple C", context);
 	FunctionType *FT = FunctionType::get(Type::getDoubleTy(context), false);
 	Function* F = Function::Create(FT, Function::ExternalLinkage, "MABI", module);
-	env globalEnv;
-	envs.push_back(globalEnv);
 	code_PROGRAM(head);
     module->dump();
 }
