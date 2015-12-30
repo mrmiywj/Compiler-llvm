@@ -141,7 +141,6 @@ Value* code_EXP(Node* n)
 	}
 	else if (childToken == "ID")
 	{
-		string childNextToken = n->child->next->token;
 		if (n->child->next == NULL)
 		{
 			env envNow = envs.back();
@@ -157,7 +156,7 @@ Value* code_EXP(Node* n)
 			string funcName = n->child->content;
 			Function* f = module->getFunction(funcName);
 			if (f == 0)
-				return errorOccur("No such function");
+				errorOccur("No such function");
 			vector<Value* > args = code_ARGS(n->child->next->next);
 			return builder.CreateCall(f, args, "calltmp");
 		}
