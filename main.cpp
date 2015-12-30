@@ -98,11 +98,7 @@ llvm::Value* code_PROGRAM(Node* n)
 
 Value* get_LHS(Node* n)
 {
-	env now = envs.back();
-	if (n->next == NULL)
-	{
-		return nowEnv[string(n->child->content)];
-	}
+	return nowEnv[string(n->child->content)];
 }
 
 vector<Value*> code_ARGS(Node* n)
