@@ -512,12 +512,15 @@ vector<string> code_PARA_ARG_Name(Node* n)
 
 void code_DEC_GLO(Node* n, Type* t)
 {
-	string name = n->child->content;
-	Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL);
-	globalEnv[name] = v;
+	string name = n->child->child->content;
+	if (n->child->child->next == NULL)
+	{
+		Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL);
+		globalEnv[name] = v;
+	}
 	if (n->child->next != NULL)
 	{
-		Value* val = code_EXP(n->child->next->next);
+		Value* val = code_INIT(n->child->next->next);
 		builder.CreateLoad(val, v);
 	}
 }
