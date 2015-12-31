@@ -86,15 +86,15 @@ BasicBlock* contBlock;
 
 void remove_multi_termi(Function* f)
 {
-	for (auto& b : f->getBasicBlockList())
+	for (auto b = f->begin(); b != f->end(); ++b)
 	{
 		bool flag = false;
-		for (auto& i : b.getInstList())
+		for (auto i=b->begin(); i!= b->end(); ++i)
 		{
-			if (i.isTerminator())
+			if (i->isTerminator())
 			{
 				if (flag)
-					i.eraseFromParent();
+					i->removeFromParent();
 				else
 					flag = true;
 			}
@@ -720,9 +720,9 @@ int main(int argc, char* argv[])
 	env globalEnv;
 	//envs.push_back(globalEnv);
 	code_PROGRAM(head);
-	for (auto f : module->getFunctionList())
+	for (auto& f : module->getFunctionList())
 	{
-		remove_multi_termi(*f);
+		remove_multi_termi(&f);
 	}
     module->dump();
 }

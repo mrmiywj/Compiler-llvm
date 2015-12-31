@@ -42,9 +42,6 @@ loop:                                             ; preds = %Cond
 then:                                             ; preds = %loop
   br label %step
 
-wuwu:
-  br label %ifcont
-
 else:                                             ; preds = %loop
   br label %ifcont
 
