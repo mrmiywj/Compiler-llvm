@@ -524,7 +524,8 @@ void code_DEC_GLO(Node* n, Type* t)
 		if (initToken == "EXP")
 		{
 			int init = atoi(n->child->next->next->child->child->content);
-			Constant* c = Constant::getIntegerValue(t, init);
+			APInt i(32,init,true);
+			Constant* c = Constant::getIntegerValue(t,i);
 			Value* v = new GlobalVariable(t, false, GlobalValue::ExternalLinkage, c);
 		}
 	}
