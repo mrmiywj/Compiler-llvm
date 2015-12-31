@@ -646,9 +646,9 @@ void code_STMT(Node* n,Function* f)
 
 
 		BasicBlock* loopBB = BasicBlock::Create(context, "loop", f);
-		BasicBlock* stepBB = BasicBlock::Create(context, "step", f);
+		BasicBlock* stepBB = BasicBlock::Create(context, "step");
 		contBlock = stepBB;
-		BasicBlock* outLoopBB = BasicBlock::Create(context, "outloop", f);
+		BasicBlock* outLoopBB = BasicBlock::Create(context, "outloop");
 		breakBlock = outLoopBB;
 		//buidler.CreateBr(condBB);
 
@@ -661,7 +661,8 @@ void code_STMT(Node* n,Function* f)
 		Node* step = n->child->next->next->next->next->next->next;
 		Value* stepValue = code_EXP(step);
 		builder.CreateBr(condBB);
-
+		f->getBasicBlockList().push_back(stepBB);
+		f->getBasicBlockList().push_back(outLoopBB);
 		builder.SetInsertPoint(outLoopBB);
 	}
 	else if (tmp_token == "CONT")
