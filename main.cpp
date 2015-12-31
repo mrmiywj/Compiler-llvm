@@ -80,6 +80,8 @@ map<string, Function*> fEnv;
 map<string, env> funcEnv;
 env nowEnv;
 raw_os_ostream out(cout) ;
+BasicBlock* breakBlock;
+BasicBlock* contBlock;
 
 
 AllocaInst* CreateEntryBlockAlloca(Function* f,string varName, Type* t)
@@ -614,6 +616,7 @@ void code_STMT(Node* n,Function* f)
 		BasicBlock *thenBB = BasicBlock::Create(context, "then", f);
 		BasicBlock *elseBB = BasicBlock::Create(context, "else");
 		BasicBlock *mergeBB = BasicBlock::Create(context, "ifcont");
+		breakBlock = mergeBB;
 		builder.CreateCondBr(condV, thenBB, elseBB);
 		bool flag = (n->child->next->next->next->next->next->child != NULL);
 		builder.SetInsertPoint(thenBB);
@@ -643,18 +646,37 @@ void code_STMT(Node* n,Function* f)
 
 
 		BasicBlock* loopBB = BasicBlock::Create(context, "loop", f);
+		BasicBlock* stepBB = BasicBlock::Create(context, "step", f);
+		contBlock = stepBB;
 		BasicBlock* outLoopBB = BasicBlock::Create(context, "outloop", f);
+		breakBlock = outLoopBB;
 		//buidler.CreateBr(condBB);
+
 		builder.CreateCondBr(condV, loopBB, outLoopBB);
 		Node* body = n->child->next->next->next->next->next->next->next->next;
 		builder.SetInsertPoint(loopBB);
 		code_STMT(body,f );
+
+		builder.SetInsertPoint(stepBB);
 		Node* step = n->child->next->next->next->next->next->next;
 		Value* stepValue = code_EXP(step);
 		builder.CreateBr(condBB);
-		
-		
+
 		builder.SetInsertPoint(outLoopBB);
+	}
+	else if (tmp_token == "CONT")
+	{
+		if (contBlock != NULL)
+		{
+			builder.CreateBr(contBlock);
+		}
+	}
+	else if (tmp_token == "BREAK")
+	{
+		if (breakBlock != NULL)
+		{
+			builder.CreateBr(breakBlock);
+		}
 	}
 }
 
