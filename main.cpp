@@ -13,6 +13,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/raw_os_ostream.h"
+#include "llvm/IR/Verifier.h"
 //#include "smallc.tab.h"
 //#include "y.tab.h"
 using namespace std;
@@ -664,8 +665,9 @@ void code_STMT(Node* n,Function* f)
 		f->getBasicBlockList().push_back(stepBB);
 		f->getBasicBlockList().push_back(outLoopBB);
 		builder.SetInsertPoint(outLoopBB);
+		verifyFunction(*f);
 	}
-	else if (tmp_token == "CONT")`
+	else if (tmp_token == "CONT")
 	{
 		if (contBlock != NULL)
 		{

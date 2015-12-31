@@ -39,17 +39,6 @@ loop:                                             ; preds = %Cond
   %3 = icmp eq i32 %i6, 5
   br i1 %3, label %then, label %else
 
-step:                                             ; preds = %then
-  %i7 = load i32, i32* %i
-  %i8 = load i32, i32* %i
-  %4 = add i32 %i8, 1
-  store i32 %4, i32* %i
-  br label %Cond
-
-outloop:                                          ; preds = %Cond
-  %x9 = load i32, i32* %x
-  ret i32 %x9
-
 then:                                             ; preds = %loop
   br label %step
   br label %ifcont
@@ -58,4 +47,16 @@ else:                                             ; preds = %loop
   br label %ifcont
 
 ifcont:                                           ; preds = %else, %then
+  br label %step
+
+step:                                             ; preds = %ifcont, %then
+  %i.7 = load i32, i32* %i
+  %i.8 = load i32, i32* %i
+  %5 = add i32 %i.8, 1
+  store i32 %5, i32* %i
+  br label %Cond
+
+outloop:                                          ; preds = %Cond
+  %x9 = load i32, i32* %x
+  ret i32 %x9
 }
