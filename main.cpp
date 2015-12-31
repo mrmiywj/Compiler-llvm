@@ -720,5 +720,9 @@ int main(int argc, char* argv[])
 	env globalEnv;
 	//envs.push_back(globalEnv);
 	code_PROGRAM(head);
+	for (auto f : module->getFunctionList())
+	{
+		remove_multi_termi(*f);
+	}
     module->dump();
 }
