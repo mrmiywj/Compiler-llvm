@@ -83,7 +83,7 @@ env nowEnv;
 raw_os_ostream out(cout) ;
 BasicBlock* breakBlock;
 BasicBlock* contBlock;
-
+env globalEnv;
 void remove_multi_termi(Function* f)
 {
 	for (auto b = f->begin(); b != f->end(); ++b)
@@ -529,7 +529,7 @@ void code_EXTVARS(Node* n,Type* t)
 		return;
 	}
 	n = n->child;
-	string tmp = dec->child->child->token;
+	//string tmp = dec->child->child->token;
 	while (true)
 	{
 		code_DEC_GLO(n,t);
@@ -731,7 +731,6 @@ int main(int argc, char* argv[])
     module = new Module("Simple C", context);
 	FunctionType *FT = FunctionType::get(Type::getDoubleTy(context), false);
 	Function* F = Function::Create(FT, Function::ExternalLinkage, "MABI", module);
-	env globalEnv;
 	//envs.push_back(globalEnv);
 	code_PROGRAM(head);
 	for (auto f = module->begin(); f != module->end(); ++f)
