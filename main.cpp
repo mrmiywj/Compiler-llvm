@@ -84,6 +84,24 @@ raw_os_ostream out(cout) ;
 BasicBlock* breakBlock;
 BasicBlock* contBlock;
 
+void remove_multi_termi(Function* f)
+{
+	for (auto& b : f->getBasicBlockList())
+	{
+		bool flag = false;
+		for (auto& i : b.getInstList())
+		{
+			if (i.isTerminator())
+			{
+				if (flag)
+					i.eraseFromParent();
+				else
+					flag = true;
+			}
+		}
+	}
+}
+
 
 AllocaInst* CreateEntryBlockAlloca(Function* f,string varName, Type* t)
 {
