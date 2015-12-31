@@ -656,7 +656,7 @@ void code_STMT(Node* n,Function* f)
 		Node* body = n->child->next->next->next->next->next->next->next->next;
 		builder.SetInsertPoint(loopBB);
 		code_STMT(body,f );
-
+		builder.CreateBr(stepBB);
 		builder.SetInsertPoint(stepBB);
 		Node* step = n->child->next->next->next->next->next->next;
 		Value* stepValue = code_EXP(step);
@@ -665,7 +665,7 @@ void code_STMT(Node* n,Function* f)
 		f->getBasicBlockList().push_back(outLoopBB);
 		builder.SetInsertPoint(outLoopBB);
 	}
-	else if (tmp_token == "CONT")
+	else if (tmp_token == "CONT")`
 	{
 		if (contBlock != NULL)
 		{
