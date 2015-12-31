@@ -512,11 +512,17 @@ vector<string> code_PARA_ARG_Name(Node* n)
 
 Type* code_VAR_ARRAY_TYPE(Node* n)
 {
+	string token = n->child->token;
+	if (token == "ID")
+		return Type::getInt32Ty(context);
 	if (n->child->next == NULL)
-		return Type::getInt32Ty();
-	int num = atoi(n->child->next->next);
-	Type* eleType = code_VAR_ARRAY_TYPE(n->child);
+		return Type::getInt32Ty(context);
+	int num = atoi(n->child->next->next->content);
+	cout<<"In var_array_type::"<<num<<endl;
+	 Type* eleType = code_VAR_ARRAY_TYPE(n->child);
 	return ArrayType::get(eleType, num);
+	//return NULL;
+
 }
 
 string get_VAR_Name(Node* n)
@@ -533,10 +539,9 @@ string get_VAR_Name(Node* n)
 
 void code_DEC_GLO(Node* n, Type* t)
 {
-	string name = n->child->child->content;
-	cout<<"In DEC_GLO::"<<name<<endl;
 	if (n->child->child->next == NULL)
 	{
+		string name = n->child->child->content;
 		if (n->child->next == NULL)
 		{
 			Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL, name);
@@ -560,7 +565,9 @@ void code_DEC_GLO(Node* n, Type* t)
 	}
 	else
 	{
-		Type* t = code_VAR_ARRAY_TYPE(n);
+		cout<<"I want to declare a global array!"<<endl;
+		Type* t = code_VAR_ARRAY_TYPE(n->child);
+		t->print(out);
 		string name = get_VAR_Name(n);
 		Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL, name);
 	}
