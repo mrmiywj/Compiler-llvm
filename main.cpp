@@ -664,6 +664,20 @@ void code_STMT(Node* n,Function* f)
 
 		builder.SetInsertPoint(outLoopBB);
 	}
+	else if (tmp_token == "CONT")
+	{
+		if (contBlock != NULL)
+		{
+			builder.CreateBr(contBlock);
+		}
+	}
+	else if (tmp_token == "BREAK")
+	{
+		if (breakBlock != NULL)
+		{
+			builder.CreateBr(breakBlock);
+		}
+	}
 }
 
 
