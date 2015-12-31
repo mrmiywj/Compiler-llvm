@@ -637,7 +637,7 @@ void code_STMT(Node* n,Function* f)
 		Node* cond = n->child->next->next->next->next;
 		Value* exp1 = code_EXP(n->child->next->next);
 		BasicBlock* condBB = BasicBlock::Create(context, "Cond", f);
-
+		builder.CreateBr(condBB);
 		builder.SetInsertPoint(condBB);
 		Value* condV = code_EXP(cond);
 
