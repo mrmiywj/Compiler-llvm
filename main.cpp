@@ -94,7 +94,7 @@ void remove_multi_termi(Function* f)
 			if (i->isTerminator())
 			{
 				if (flag)
-					i->removeFromParent();
+					i->eraseFromParent();
 				else
 					flag = true;
 			}
@@ -720,9 +720,9 @@ int main(int argc, char* argv[])
 	env globalEnv;
 	//envs.push_back(globalEnv);
 	code_PROGRAM(head);
-	for (auto& f : module->getFunctionList())
+	for (auto f = module->begin(); f != module->end(); ++f)
 	{
-		remove_multi_termi(&f);
+		remove_multi_termi(f);
 	}
     module->dump();
 }
