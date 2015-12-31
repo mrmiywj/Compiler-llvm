@@ -513,16 +513,22 @@ vector<string> code_PARA_ARG_Name(Node* n)
 void code_DEC_GLO(Node* n, Type* t)
 {
 	string name = n->child->child->content;
-	//if (n->child->child->next == NULL)
-	//{
+	if (n->child->child->next == NULL)
+	{
 		Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL);
 		globalEnv[name] = v;
-	//}
-	if (n->child->next != NULL)
-	{
-		Value* val = code_INIT(n->child->next->next);
-		builder.CreateStore(val, v);
 	}
+	else
+	{
+		string initToken = n->child->next->next->child->token;
+		if (initToken == "EXP")
+		{
+			int init = atoi(n->child->next->next->child->child->content);
+			Constant* c = Constant::getIntegerValue(t, init);
+			Value* v = new GlobalVariable(t, false, GlobalValue::ExternalLinkage, c);
+		}
+	}
+	//builder.CreateLoad(val, v);
 }
 
 void code_EXTVARS(Node* n,Type* t)
