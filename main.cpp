@@ -510,18 +510,32 @@ vector<string> code_PARA_ARG_Name(Node* n)
 	return ret;
 }
 
+void code_DEC_GLO(Node* n, Type* t)
+{
+	string name = n->child->content;
+	Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL);
+	globalEnv[name] = v;
+	if (n->child->next != NULL)
+	{
+		Value* val = code_EXP(n->child->next->next);
+		builder.CreateLoad(val, v);
+	}
+}
+
 void code_EXTVARS(Node* n,Type* t)
 {
 	if (n == NULL)
 	{
 		return;
 	}
-	Node* dec = n->child;
+	n = n->child;
 	string tmp = dec->child->child->token;
-	if (tmp== "ID")
+	while (true)
 	{
-		string name = dec->child->child->content;
-		Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL);
+		code_DEC_GLO(n,t);
+		if (n->next == NULL)
+			break;
+		n = n->next->next->child;
 	}
 }
 
