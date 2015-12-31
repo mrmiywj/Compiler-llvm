@@ -41,6 +41,8 @@ loop:                                             ; preds = %Cond
 
 then:                                             ; preds = %loop
   br label %step
+
+wuwu:
   br label %ifcont
 
 else:                                             ; preds = %loop
@@ -52,8 +54,8 @@ ifcont:                                           ; preds = %else, %then
 step:                                             ; preds = %ifcont, %then
   %i.7 = load i32, i32* %i
   %i.8 = load i32, i32* %i
-  %5 = add i32 %i.8, 1
-  store i32 %5, i32* %i
+  %4 = add i32 %i.8, 1
+  store i32 %4, i32* %i
   br label %Cond
 
 outloop:                                          ; preds = %Cond
