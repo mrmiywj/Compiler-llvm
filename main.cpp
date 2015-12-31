@@ -510,28 +510,59 @@ vector<string> code_PARA_ARG_Name(Node* n)
 	return ret;
 }
 
+Type* code_VAR_ARRAY_TYPE(Node* n)
+{
+	if (n->child->next == NULL)
+		return Type::getInt32Ty();
+	int num = atoi(n->child->next->next);
+	Type* eleType = code_VAR_ARRAY_TYPE(n->child);
+	return ArrayType::get(eleType, num);
+}
+
+string get_VAR_Name(Node* n)
+{
+	string childToken = n->child->token;
+	n = n->child;
+	while (childToken != "ID")
+	{
+		childToken = n->child->token;
+		n = n->child;
+	}
+	return n->content;
+}
+
 void code_DEC_GLO(Node* n, Type* t)
 {
 	string name = n->child->child->content;
 	cout<<"In DEC_GLO::"<<name<<endl;
-	if (n->child->next == NULL)
+	if (n->child->child->next == NULL)
 	{
-		Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL,name);
-		globalEnv[name] = v;
+		if (n->child->next == NULL)
+		{
+			Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL, name);
+			globalEnv[name] = v;
+		}
+		else
+		{
+			cout << "I'm in global def with init" << endl;
+			string initToken = n->child->next->next->child->token;
+			if (initToken == "EXP")
+			{
+				int init = atoi(n->child->next->next->child->child->content);
+				cout << "In global init::" << init << endl;
+				APInt i(32, init, true);
+				Constant* c = Constant::getIntegerValue(t, i);
+				c->print(out);
+				Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, c, name);
+				globalEnv[name] = v;
+			}
+		}
 	}
 	else
 	{
-		cout<<"I'm in global def with init"<<endl;
-		string initToken = n->child->next->next->child->token;
-		if (initToken == "EXP")
-		{
-			int init = atoi(n->child->next->next->child->child->content);
-			cout<<"In global init::"<<init<<endl;
-			APInt i(32,init,true);
-			Constant* c = Constant::getIntegerValue(t,i);
-			c->print(out);
-			Value* v = new GlobalVariable(*module,t, false, GlobalValue::ExternalLinkage, c,name);
-		}
+		Type* t = code_VAR_ARRAY_TYPE(n);
+		string name = get_VAR_Name(n);
+		Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL, name);
 	}
 	//builder.CreateLoad(val, v);
 }
