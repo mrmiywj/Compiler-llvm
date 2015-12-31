@@ -25,7 +25,7 @@ entry:
   store i32 1, i32* %i
   br label %Cond
 
-Cond:                                             ; preds = %loop, %entry
+Cond:                                             ; preds = %step, %entry
   %i3 = load i32, i32* %i
   %1 = icmp slt i32 %i3, 10
   br i1 %1, label %loop, label %outloop
@@ -36,12 +36,26 @@ loop:                                             ; preds = %Cond
   %2 = add i32 %x5, 1
   store i32 %2, i32* %x
   %i6 = load i32, i32* %i
+  %3 = icmp eq i32 %i6, 5
+  br i1 %3, label %then, label %else
+
+step:                                             ; preds = %then
   %i7 = load i32, i32* %i
-  %3 = add i32 %i7, 1
-  store i32 %3, i32* %i
+  %i8 = load i32, i32* %i
+  %4 = add i32 %i8, 1
+  store i32 %4, i32* %i
   br label %Cond
 
 outloop:                                          ; preds = %Cond
-  %x8 = load i32, i32* %x
-  ret i32 %x8
+  %x9 = load i32, i32* %x
+  ret i32 %x9
+
+then:                                             ; preds = %loop
+  br label %step
+  br label %ifcont
+
+else:                                             ; preds = %loop
+  br label %ifcont
+
+ifcont:                                           ; preds = %else, %then
 }
