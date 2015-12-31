@@ -513,20 +513,24 @@ vector<string> code_PARA_ARG_Name(Node* n)
 void code_DEC_GLO(Node* n, Type* t)
 {
 	string name = n->child->child->content;
-	if (n->child->child->next == NULL)
+	cout<<"In DEC_GLO::"<<name<<endl;
+	if (n->child->next == NULL)
 	{
-		Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL);
+		Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL,name);
 		globalEnv[name] = v;
 	}
 	else
 	{
+		cout<<"I'm in global def with init"<<endl;
 		string initToken = n->child->next->next->child->token;
 		if (initToken == "EXP")
 		{
 			int init = atoi(n->child->next->next->child->child->content);
+			cout<<"In global init::"<<init<<endl;
 			APInt i(32,init,true);
 			Constant* c = Constant::getIntegerValue(t,i);
-			Value* v = new GlobalVariable(t, false, GlobalValue::ExternalLinkage, c);
+			c->print(out);
+			Value* v = new GlobalVariable(*module,t, false, GlobalValue::ExternalLinkage, c,name);
 		}
 	}
 	//builder.CreateLoad(val, v);
