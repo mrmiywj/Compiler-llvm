@@ -632,6 +632,30 @@ void code_STMT(Node* n,Function* f)
 		f->getBasicBlockList().push_back(mergeBB);
 		builder.SetInsertPoint(mergeBB);
 	}
+	else if (tmp_token == "FOR")
+	{
+		Node* cond = n->child->next->next->next->next;
+		Value* exp1 = code_EXP(n->child->next->next);
+		BasicBlock* condBB = BasicBlock::Create(context, "Cond", f);
+
+		builder.SetInsertPoint(condBB);
+		Value* condV = code_EXP(cond);
+
+
+		BasicBlock* loopBB = BasicBlock::Create(context, "loop", f);
+		BasicBlock* outLoopBB = BasicBlock::Create(context, "outloop", f);
+		//buidler.CreateBr(condBB);
+		builder.CreateCondBr(condV, loopBB, outLoopBB);
+		Node* body = n->child->next->next->next->next->next->next->next->next;
+		builder.SetInsertPoint(loopBB);
+		code_STMT(body,f );
+		Node* step = n->child->next->next->next->next->next->next;
+		Value* stepValue = code_EXP(step);
+		builder.CreateBr(condBB);
+		
+		
+		builder.SetInsertPoint(outLoopBB);
+	}
 }
 
 
