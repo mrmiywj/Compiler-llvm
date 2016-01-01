@@ -537,6 +537,35 @@ string get_VAR_Name(Node* n)
 	return n->content;
 }
 
+vector<int> get_INIT(Node* n, int len)
+{
+	vector<int> ret;
+	if (n->child->next == NULL)
+	{
+		errorOccur("Array must initilized wtih LC");
+	}
+	Node* args = n->child->next;
+	while (true)
+	{
+		int v = atoi(args->child->child->content);
+		ret.push_back(v);
+		if (args->child->next == NULL)
+			break;
+		else
+		{
+			args = args->child->next->next;
+		}
+	}
+	if (ret.size() == 1 && len != 1)
+	{
+		int v = ret.front();
+		for (int i = 0; i < len - 1; ++1)
+			ret.push_back(v);
+	}
+	return ret;
+	
+}
+
 void code_DEC_GLO(Node* n, Type* t)
 {
 	if (n->child->child->next == NULL)
@@ -565,11 +594,31 @@ void code_DEC_GLO(Node* n, Type* t)
 	}
 	else
 	{
-		cout<<"I want to declare a global array!"<<endl;
-		Type* t = code_VAR_ARRAY_TYPE(n->child);
-		t->print(out);
-		string name = get_VAR_Name(n);
-		Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL, name);
+		if (n->child->next == NULL)
+		{
+			cout << "I want to declare a global array!" << endl;
+			Type* t = code_VAR_ARRAY_TYPE(n->child);
+			t->print(out);
+			string name = get_VAR_Name(n);
+			Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL, name);
+		}
+		else
+		{
+			Type* t = code_VAR_ARRAY_TYPE(n->child);
+			string name = get_VAR_Name(n);
+			int len = atoi(n->child->child->next->next->content);
+			vector<int> initialvalue = get_INIT(n->child->next->next, len);
+			vector<Constant*> cv;
+			for (auto i : initialvalue)
+			{
+				APInt  init(32, *i, true);
+				Constant* c = Constant::getIntegerValue(Type::getInt32Ty(), init);
+				cv.push_back(c);
+			}
+			ArrayRef<Constant*> ar(cv);
+			Constant* conarr = Constant::get(t, ar);
+			Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL, name);
+		}
 	}
 	//builder.CreateLoad(val, v);
 }
