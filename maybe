@@ -1,0 +1,117 @@
+TYPE
+ ID: x
+ ASSIGNOP
+ INT: 1
+COMMA
+ID: y
+COMMA
+ID: z
+ASSIGNOP
+INT: 2
+SEMI
+TYPE
+ ID: arr
+LB
+INT: 2
+RB
+ ASSIGNOP
+ LC
+INT: 1
+COMMA
+INT: 2
+RC
+SEMI
+TYPE
+ ID: main
+LP
+RP
+LC
+	RETURN
+ ID: x
+SEMI
+RC
+yywrap
+  PROGRAM
+    EXTDEFS
+      EXTDEF
+        SPEC
+          TYPE  int
+        EXTVARS
+          DEC
+            VAR
+              ID  x
+            ASSIGNOP  =
+            INIT
+              EXP
+                INT  1
+          COMMA  ,
+          EXTVARS
+            DEC
+              VAR
+                ID  y
+            COMMA  ,
+            EXTVARS
+              DEC
+                VAR
+                  ID  z
+                ASSIGNOP  =
+                INIT
+                  EXP
+                    INT  2
+        SEMI  ;
+      EXTDEFS
+        EXTDEF
+          SPEC
+            TYPE  int
+          EXTVARS
+            DEC
+              VAR
+                VAR
+                  ID  arr
+                LB  [
+                INT  2
+                RB  ]
+              ASSIGNOP  =
+              INIT
+                LC  {
+                ARGS
+                  EXP
+                    INT  1
+                  COMMA  ,
+                  ARGS
+                    EXP
+                      INT  2
+                RC  }
+          SEMI  ;
+        EXTDEFS
+          EXTDEF
+            SPEC
+              TYPE  int
+            FUNC
+              ID  main
+              LP  (
+              PARAS
+              RP  )
+            STMTBLOCK
+              LC  {
+              DEFS
+              STMTS
+                STMT
+                  RETURN  return
+                  EXP
+                    ID  x
+                  SEMI  ;
+                STMTS
+              RC  }
+          EXTDEFS
+HhahahaI'm in global def with init
+In global init::1
+i32 1I'm in global def with init
+In global init::2
+i32 2I want to declare a global array with init!
+In var_array_type::2
+[2 x i32] [i32 1, i32 2]Function Def::0 and 00
+RETURN
+ID
+In exp!!
+In exp ID::x
