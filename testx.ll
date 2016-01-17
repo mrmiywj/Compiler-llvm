@@ -1,5 +1,7 @@
 ; ModuleID = 'Simple C'
 
+@z = global i32 1
+
 declare double @MABI()
 
 define i32 @f(i32 %x1, i32 %y2, i32 %z3) {

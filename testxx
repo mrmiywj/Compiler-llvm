@@ -1,0 +1,6 @@
+int crr[1000],a;
+int main()
+{
+  crr[10] =10;
+  return crr[10];
+}

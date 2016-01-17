@@ -1,8 +1,15 @@
 int x = 1,y,z=2;
 int a = 10;
 int arr[2] = {1,2};
+int f(int x)
+{
+  if (x == 0)
+     return 1;
+  else
+     return x * f(x - 1);
+}
 int main()
 {
-  arr[0] = arr[1] +3;
-	return arr[0];
+  int res = f(5);
+  return res;
 }

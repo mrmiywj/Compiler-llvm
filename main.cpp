@@ -54,6 +54,10 @@ void code_DEF_INNER(Node* n, Function* f);
 Value* code_EXP(Node* n);
 Value* code_INIT(Node* n);
 void code_STMTS(Node* n, Function* f);
+
+
+bool elseFlag = true;
+bool thenFlag = true;
 /*
 Useful functions to DEBUG;
 */
@@ -117,8 +121,120 @@ AllocaInst* CreateEntryBlockAlloca(Function* f,string varName, Type* t)
 	return NULL;
 }
 
+Function* createPrintfFunction()
+{
+  vector<Type*> printf_arg_types;
+  printf_arg_types.push_back(Type::getInt8PtrTy(context));
+
+  FunctionType* printf_type = FunctionType::get(Type::getInt32Ty(context), printf_arg_types, true);
+
+  Function* func = Function::Create(printf_type, Function::ExternalLinkage, Twine("printf"),module);
+
+  func->setCallingConv(CallingConv::C);
+  return func;
+}
+
+
+
+Function* createWriteFunction(Function* printFn)
+{
+  vector<Type*> echo_arg_types;
+  echo_arg_types.push_back(Type::getInt32Ty(context));
+
+  FunctionType* echo_type = FunctionType::get(Type::getVoidTy(context), echo_arg_types, false);
+
+  Function* func = Function::Create(echo_type, Function::InternalLinkage,Twine("write"), module);
+
+  BasicBlock* bblock = BasicBlock::Create(context, "entry", func);
+
+  const char* constValue = "%d\n";
+  Constant* format_const = ConstantDataArray::getString(context, constValue);
+
+  GlobalVariable* var = new GlobalVariable(*module, ArrayType::get(IntegerType::get(context,8), strlen(constValue) + 1), true, GlobalValue::PrivateLinkage, format_const, ".str");
+  Constant* zero = Constant::getNullValue(IntegerType::getInt32Ty(context));
+  vector<Constant*> indices;
+
+  indices.push_back(zero);
+  indices.push_back(zero);
+  Constant* var_ref = ConstantExpr::getGetElementPtr(ArrayType::get(IntegerType::get(context, 8), strlen(constValue) + 1),var, indices);
+
+  vector<Value*> args;
+  args.push_back(var_ref);
+
+  Function::arg_iterator argsValues = func->arg_begin();
+  Value* toPrint = argsValues++;
+  toPrint->setName("toPrint");
+  args.push_back(toPrint);
+
+  CallInst::Create(printFn, args, "",bblock);
+  ReturnInst::Create(context, bblock);
+  return func;
+}
+
+llvm::Function* createScanfFunction()
+{
+    std::vector<llvm::Type*> scanf_arg_types;
+    scanf_arg_types.push_back(llvm::Type::getInt8PtrTy(getGlobalContext())); //char*
+    
+    llvm::FunctionType* scanf_type =
+    llvm::FunctionType::get(
+                            llvm::Type::getInt32Ty(getGlobalContext()), scanf_arg_types, true);
+    
+    llvm::Function *func = llvm::Function::Create(
+                                                  scanf_type, llvm::Function::ExternalLinkage,
+                                                  llvm::Twine("scanf"),
+                                                  module
+                                                  );
+    func->setCallingConv(llvm::CallingConv::C);
+    return func;
+}
+
+Function* createReadFunction(llvm::Function* scanfFn)
+{
+    std::vector<llvm::Type*> read_arg_types; //no arg
+    read_arg_types.push_back(llvm::Type::getInt32PtrTy(getGlobalContext()));
+    
+    
+    llvm::FunctionType* read_type =
+    llvm::FunctionType::get(
+                            llvm::Type::getVoidTy(getGlobalContext()), read_arg_types, false);
+    
+    llvm::Function *func = llvm::Function::Create(
+                                                  read_type, llvm::Function::InternalLinkage,
+                                                  llvm::Twine("read"),
+                                                  module
+                                                  );
+    llvm::BasicBlock *bblock = llvm::BasicBlock::Create(getGlobalContext(), "entry", func, 0);
+
+    
+    const char *constValue = "%d";
+    llvm::Constant *format_const = llvm::ConstantDataArray::getString(getGlobalContext(), constValue);
+    llvm::GlobalVariable *var =
+    new llvm::GlobalVariable(
+                             *module, llvm::ArrayType::get(llvm::IntegerType::get(getGlobalContext(), 8), strlen(constValue)+1),
+                             true, llvm::GlobalValue::PrivateLinkage, format_const, ".str");
+    llvm::Constant *zero =
+    llvm::Constant::getNullValue(llvm::IntegerType::getInt32Ty(getGlobalContext()));
+    
+    std::vector<llvm::Constant*> indices;
+    indices.push_back(zero);
+    indices.push_back(zero);
+    llvm::Constant *var_ref =
+      llvm::ConstantExpr::getGetElementPtr(ArrayType::get(IntegerType::get(context, 8), strlen(constValue) +1),var, indices);
+    
+    std::vector<Value*> args;
+    args.push_back(var_ref);
+    args.push_back(func->arg_begin());
+    
+    CallInst::Create(scanfFn, makeArrayRef(args), "", bblock);
+    ReturnInst::Create(getGlobalContext(), bblock);
+    
+    return func;
+}
+
 llvm::Value* code_PROGRAM(Node* n)
 {
+
 	return code_EXTDEFS(n->child);
 
 }
@@ -210,7 +326,17 @@ Value* code_EXP(Node* n)
 			if (f == 0)
 				errorOccur("No such function");
 			vector<Value* > args = code_ARGS(n->child->next->next);
-			return builder.CreateCall(f, args, "calltmp");
+      if (funcName == "write")
+        return builder.CreateCall(f,args);
+      else  if (funcName == "read")
+        {
+          cout<<"Read value:"<<n->child->next->next->child->token<<endl;
+          Value* v = get_LHS(n->child->next->next->child);
+          ArrayRef<Value*> arg(v);
+          return builder.CreateCall(f, arg);
+        }
+      else
+        return builder.CreateCall(f, args, "calltmp");
 		}
     else if (strcmp("ARRS", n->child->next->token) == 0)
       {
@@ -246,155 +372,207 @@ Value* code_EXP(Node* n)
 	else if (childToken == "EXP")
 	{
 		//env now = envs.back();
-		Value* LHS = code_EXP(n->child);
-		Value* RHS = code_EXP(n->child->next->next);
 		string op = n->child->next->token;
 		cout << "I'm in EXP EXP!" << op << n->child->token << n->child->next->next->token << endl;
 		if (op == "PLUS")
-		{
+      {		Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			cout << "IN EXP EXP PULS::" << endl;
 			Value* ret = builder.CreateAdd(LHS, RHS);
 			return ret;
 		}
 		else if (op == "MINUS")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateSub(LHS, RHS);
 			return ret;
 		}
 		else if (op == "TIMES")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateMul(LHS, RHS);
 			return ret;
 		}
 		else if (op == "DIV")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateSDiv(LHS, RHS);
 			return ret;
 		}
 		else if (op == "MOD")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateSRem(LHS, RHS);
 			return ret;
 		}
 		else if (op == "SHLEFT")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateShl(LHS, RHS);
 			return ret;
 		}
 		else if (op == "SHRIGHT")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateLShr(LHS, RHS);
 			return ret;
 		}
 		else if (op == "GT")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateICmpSGT(LHS, RHS);
 			return ret;
 		}
 		else if (op == "GEQ")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateICmpSGE(LHS, RHS);
 			return ret;
 		}
 		else if (op == "LT")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateICmpSLT(LHS, RHS);
 			return ret;
 		}
 		else if (op == "LEQ")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateICmpSLE(LHS, RHS);
 			return ret;
 		}
 		else if (op == "EQU")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateICmpEQ(LHS, RHS);
 			return ret;
 		}
 		else if (op == "NOTEQ")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateICmpNE(LHS, RHS);
 			return ret;
 		}
 		else if (op == "BITAND")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			Value* ret = builder.CreateAnd(LHS, RHS);
 			return ret;
 		}
 		else if (op == "BITXOR")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			return builder.CreateXor(LHS, RHS);
 		}
 		else if (op == "BITOR")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			return builder.CreateOr(LHS, RHS);
 		}
 		else if (op == "LOGAND")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			return builder.CreateAnd(LHS, RHS);
 		}
 		else if (op == "LOGOR")
-		{
+      {
+        Value* LHS = code_EXP(n->child);
+        Value* RHS = code_EXP(n->child->next->next);
 			return builder.CreateOr(LHS, RHS);
 		}
 		else
 		{
 			if (op == "ASSIGNOP")
-			{
+        {
+          Value* RHS = code_EXP(n->child->next->next);
 				Value* LHS = get_LHS(n->child);
 				return builder.CreateStore(RHS, LHS);
 			}
 			else if (op == "BANDAN")
-			{
+        {
+          Value* LHS = code_EXP(n->child);
+          Value* RHS = code_EXP(n->child->next->next);
 				Value* tv = builder.CreateAnd(LHS, RHS);
 				Value* l = get_LHS(n->child);
 				return builder.CreateStore(tv, l);
 			}
 			else if (op == "BXORAN")
-			{
+        {
+          Value* LHS = code_EXP(n->child);
+          Value* RHS = code_EXP(n->child->next->next);
 				Value* tv = builder.CreateXor(LHS, RHS);
 				Value* l = get_LHS(n->child);
 				return builder.CreateStore(tv, l);
 			}
 			else if (op == "BORAN")
-			{
+        {
+          Value* LHS = code_EXP(n->child);
+          Value* RHS = code_EXP(n->child->next->next);
 				Value* tv = builder.CreateOr(LHS, RHS);
 				Value* l = get_LHS(n->child);
 				return builder.CreateStore(tv, l);
 			}
 			else if (op == "SHLEFTAN")
-			{
+        {
+          Value* LHS = code_EXP(n->child);
+          Value* RHS = code_EXP(n->child->next->next);
 				Value* tv = builder.CreateShl(LHS, RHS);
 				Value* l = get_LHS(n->child);
 				return builder.CreateStore(tv, l);
 			}
 			else if (op == "SHRIGHTAN")
-			{
+        {
+          Value* LHS = code_EXP(n->child);
+          Value* RHS = code_EXP(n->child->next->next);
 				Value* tv = builder.CreateLShr(LHS, RHS);
 				Value* l = get_LHS(n->child);
 				return builder.CreateStore(tv, l);
 			}
 			else if (op == "PLUSAN")
-			{
+        {
+          Value* LHS = code_EXP(n->child);
+          Value* RHS = code_EXP(n->child->next->next);
 				cout << "In PLUSAN!!" << endl;
 				Value* tv = builder.CreateAdd(LHS, RHS);
 				Value* l = get_LHS(n->child);
 				return builder.CreateStore(tv, l);
 			}
 			else if (op == "MINUSAN")
-			{
+        {
+          Value* LHS = code_EXP(n->child);
+          Value* RHS = code_EXP(n->child->next->next);
 				Value* tv = builder.CreateSub(LHS, RHS);
 				Value* l = get_LHS(n->child);
 				return builder.CreateStore(tv, l);
 			}
 			else if (op == "TIMESAN")
-			{
+        {
+          Value* LHS = code_EXP(n->child);
+          Value* RHS = code_EXP(n->child->next->next);
 				Value* tv = builder.CreateMul(LHS, RHS);
 				Value* l = get_LHS(n->child);
 				return builder.CreateStore(tv, l);
 			}
 			else if (op == "DIVAN")
-			{
+        {
+          Value* LHS = code_EXP(n->child);
+          Value* RHS = code_EXP(n->child->next->next);
 				Value* tv = builder.CreateSDiv(LHS, RHS);
 				Value* l = get_LHS(n->child);
 				return builder.CreateStore(tv, l);
@@ -402,7 +580,8 @@ Value* code_EXP(Node* n)
 		}
 	}
 	else if (childToken == "MINUS")
-	{
+    {
+      // Value* RHS = code_EXP(n->child->next->next);
 		Value* v = code_EXP(n->child->next);
 		Value* l = get_LHS(n->child->next);
 		Value* t = builder.CreateSub( ConstantInt::getSigned(Type::getInt32Ty(context), 0),v);
@@ -430,11 +609,13 @@ Value* code_EXP(Node* n)
 		return builder.CreateStore(t, l);
 	}
 	else if (childToken == "LOGNOT")
-	{
+    {
+      cout<<"Yep I'm in LOGNOT!!"<<endl;
 		Value* v = code_EXP(n->child->next);
 		Value* l = get_LHS(n->child->next);
-		Value* t = builder.CreateICmpEQ(v, ConstantInt::getSigned(Type::getInt32Ty(context), 0));
-		return builder.CreateStore(t, l);
+    return builder.CreateICmpEQ(v, ConstantInt::getSigned(Type::getInt32Ty(context),0));
+    //   	Value* t = builder.CreateICmpEQ(v, ConstantInt::getSigned(Type::getInt32Ty(context), 0));
+    //	return builder.CreateStore(t, l);
 	}
 
 	return NULL;
@@ -637,8 +818,10 @@ void code_DEC_GLO(Node* n, Type* t)
 	{
 		string name = n->child->child->content;
 		if (n->child->next == NULL)
-		{
-			Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL, name);
+      {
+        APInt i(32,0 ,true);
+        Constant* c = Constant::getIntegerValue(t, i);
+			Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, c, name);
 			globalEnv[name] = v;
 		}
 		else
@@ -665,7 +848,17 @@ void code_DEC_GLO(Node* n, Type* t)
 			Type* t = code_VAR_ARRAY_TYPE(n->child);
 			t->print(out);
 			string name = get_VAR_Name(n);
-			Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, NULL, name);
+      int len = atoi(n->child->child->next->next->content);
+      vector<Constant*> cv;
+      for (int i = 0; i < len; i++)
+        {
+          APInt init(32,0,true);
+          Constant* c = Constant::getIntegerValue(Type::getInt32Ty(context), init);
+          cv.push_back(c);
+        }
+      ArrayRef<Constant*> ar(cv);
+      Constant* conarr = ConstantArray::get(cast<ArrayType>(t), ar);      
+			Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, conarr, name);
       globalEnv[name] = v;
 		}
 		else
@@ -762,10 +955,26 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
 		return;
 	}
 	else
-	{
-		cout << n->child->next->next->token << endl;
-		Value* v = code_INIT(n->child->next->next);
-		builder.CreateStore(v, inst);
+    {
+      Node* init = n->child->next->next;
+      if (strcmp("EXP", init->child->token))
+        {
+          cout << n->child->next->next->token << endl;
+          Value* v = code_INIT(n->child->next->next);
+          builder.CreateStore(v, inst); 
+        }
+      else
+        {
+          int num = atoi(n->child->child->next->next->content);
+          vector<int> vc = get_INIT(n->child->next->next,num);
+          for (auto& i: vc)
+            {
+              APInt tmp(32,i);
+              Constant* a = Constant::getIntegerValue(Type::getInt32Ty(context), tmp);
+              builder.CreateStore(a, inst);
+              inst = builder.CreateGEP(inst,);
+            }
+        }
 	}
 }
 
@@ -806,6 +1015,8 @@ void code_STMT(Node* n,Function* f)
 	{
 		Value* ret = code_EXP(n->child->next);
 		builder.CreateRet(ret);
+    elseFlag = false;
+    thenFlag = false;
 	}
 	else if (tmp_token == "EXP")
 	{
@@ -813,7 +1024,11 @@ void code_STMT(Node* n,Function* f)
 		Value* v = code_EXP(n->child);
 	}
 	else if (tmp_token == "IF")
-	{
+    {
+      bool tempThen = thenFlag;
+      bool tempElse = elseFlag;
+      thenFlag = true;
+      elseFlag = true;
 		Value* condV = code_EXP(n->child->next->next);
 		Function* f = builder.GetInsertBlock()->getParent();
 		BasicBlock *thenBB = BasicBlock::Create(context, "then", f);
@@ -824,8 +1039,13 @@ void code_STMT(Node* n,Function* f)
 		bool flag = (n->child->next->next->next->next->next->child != NULL);
 		builder.SetInsertPoint(thenBB);
 		code_STMT(n->child->next->next->next->next, f);
-		builder.CreateBr(mergeBB);
-		thenBB = builder.GetInsertBlock();
+    bool mergeFlag = false;
+    if (thenFlag)
+      {
+        builder.CreateBr(mergeBB);
+        mergeFlag = true;
+      }
+    thenBB = builder.GetInsertBlock();
 		f->getBasicBlockList().push_back(elseBB);
 		builder.SetInsertPoint(elseBB);
 		if (flag)
@@ -833,10 +1053,19 @@ void code_STMT(Node* n,Function* f)
 			Node* estmt = n->child->next->next->next->next->next->child->next;
 			code_STMT(estmt,f );
 		}
-		builder.CreateBr(mergeBB);
+    if(elseFlag)
+      {
+        builder.CreateBr(mergeBB);
+        mergeFlag = true;
+      }
 		elseBB = builder.GetInsertBlock();
-		f->getBasicBlockList().push_back(mergeBB);
-		builder.SetInsertPoint(mergeBB);
+    if (elseFlag || thenFlag)
+      {
+        f->getBasicBlockList().push_back(mergeBB);
+        builder.SetInsertPoint(mergeBB); 
+      }
+    thenFlag = tempThen;
+    elseFlag = tempElse;
 	}
 	else if (tmp_token == "FOR")
 	{
@@ -901,8 +1130,16 @@ int main(int argc, char* argv[])
     unique_ptr<Module> Owner = make_unique<Module>("Simple C", context);
     module = Owner.get();
     //exeeng = EngineBuilder(move(Owner)).create();
-    FunctionType *FT = FunctionType::get(Type::getDoubleTy(context), false);
-    Function* F = Function::Create(FT, Function::ExternalLinkage, "MABI", module);
+    //    vector<llvm::Type*> printf_arg_types;
+    //    printf_arg_types.push_back(Type::getInt32Ty(context));
+    //    FunctionType *printf_type = FunctionType::get(Type::getInt32Ty(context), printf_arg_types,true);
+    //    Function* printf_dec = Function::Create(printf_type, Function::ExternalLinkage,Twine("printf"), module);
+    Function* printfFunc = createPrintfFunction();
+    Function* writeFunc = createWriteFunction(printfFunc);
+    Function* scanfFunc = createScanfFunction();
+    Function* readFunc = createReadFunction(scanfFunc);
+    error_code err;
+    raw_fd_ostream f("out.ll", err,sys::fs::OpenFlags::F_RW);
     //envs.push_back(globalEnv);
     code_PROGRAM(head);
     //for (auto f = module->begin(); f != module->end(); ++f)
@@ -918,4 +1155,5 @@ int main(int argc, char* argv[])
     //ArrayRef<GenericValue> mainarg;
     //exeeng->runFunction(mainFunc,mainarg);
     module->dump();
+    module->print(f,NULL);
 }
