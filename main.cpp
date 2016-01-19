@@ -94,6 +94,8 @@ BasicBlock* contBlock;
 env globalEnv;
 ExecutionEngine* exeeng;
 bool isLeft = false;
+bool retFlag = false;
+bool contbreakFlag = false;
 void remove_multi_termi(Function* f)
 {
 	for (auto b = f->begin(); b != f->end(); ++b)
@@ -361,6 +363,13 @@ Value* code_EXP(Node* n)
         string name = n->child->content;
         cout<<"Array name::"<<name<<endl;
         Value* pt = nowEnv[name];
+        if (pt)
+          cout<<"I found array ptr"<<endl;
+        else
+          {
+            cout<<"I cant find array ptr"<<endl;
+            exit(-1);
+          }
         pt->print(out);
         Value* eleptr=  builder.CreateInBoundsGEP(pt, inds);
         //   if (isLeft)
@@ -598,8 +607,12 @@ Value* code_EXP(Node* n)
 	{
 		Value* v = code_EXP(n->child->next);
 		Value* l = get_LHS(n->child->next);
+    cout<<"I'm in DECR::"<<endl;
 		Value* t = builder.CreateSub(v, ConstantInt::getSigned(Type::getInt32Ty(context), 1));
-		return builder.CreateStore(t, l);
+    cout<<"CreateSub succ!"<<endl;
+    Value* ret = builder.CreateStore(t,l);
+    return ret;
+		//return builder.CreateStore(t, l);
 	}
 	else if (childToken == "BITNOT")
 	{
@@ -940,7 +953,68 @@ void code_DECS_INNER(Node* n, Function* f, Type* t)
 
 void code_DEC_INNER(Node* n, Function* f, Type* t)
 {
-	string name = n->child->child->content;
+  if (n->child->child->next == NULL)
+    {
+      string name = n->child->child->content;
+      cout << n->child->token << " " << n->child->child->content<<endl;
+      AllocaInst* inst = builder.CreateAlloca(t,NULL,n->child->child->content);
+      //env now = envs.back();
+      nowEnv[string(n->child->child->content)] = inst;
+      if (nowEnv[string(n->child->child->content)])
+        cout << "Insert succesully"<<n->child->child->content;
+      //envs.pop_back();
+      //envs.push_back(now);
+      //cout << "In DEC_INNER"<<envs.size() <<" "<<n->child->child->content <<now[string(n->child->child->content)]<< envs.back()[string(n->child->child->content)]<<endl;
+      if (n->child->next == NULL)
+        return;
+      else
+        {
+          Node* init = n->child->next->next;
+          if (strcmp("EXP", init->child->token) == 0)
+            {
+              cout << n->child->next->next->token << endl;
+              Value* v = code_INIT(n->child->next->next);
+              builder.CreateStore(v, inst); 
+            }
+        }
+    }
+  else
+    {
+      int arrlen = atoi(n->child->child->next->next->content);
+      string name = n->child->child->child->content;
+      cout<<"I'm allocating array::"<<name<<endl;
+      AllocaInst* inst = builder.CreateAlloca(ArrayType::get(t,arrlen),NULL, n->child->child->child->content);
+      inst->print(out);
+      nowEnv[name] = inst;
+      if (nowEnv[name])
+        cout<<"Alloca array successfully"<<endl;
+      if (n->child->next == NULL)
+        return;
+      else
+        {
+          int num = atoi(n->child->child->next->next->content);
+          vector<int> vc = get_INIT(n->child->next->next,num);
+          int index = 0;
+          /*for (auto& i:vc)
+            {
+              cout<<"I'm declare inner array"<<endl;
+              cout<<i<<endl;
+              }*/
+          for (auto& i: vc)
+            {
+              APInt tmp(32,i);
+              Constant* a = ConstantInt::get(Type::getInt32Ty(context), tmp);
+              vector<Value*> inds;
+              inds.push_back(ConstantInt::get(Type::getInt32Ty(context), 0));
+              inds.push_back(ConstantInt::get(Type::getInt32Ty(context), index));
+              Value* ptr = builder.CreateInBoundsGEP(inst, inds);
+              Value* s = builder.CreateStore(a,ptr);
+              ++index;
+              }
+        }
+    }
+
+	/*string name = n->child->child->content;
 	cout << n->child->token << " " << n->child->child->content<<endl;
 	AllocaInst* inst = builder.CreateAlloca(t,NULL,n->child->child->content);
 	//env now = envs.back();
@@ -967,15 +1041,20 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
         {
           int num = atoi(n->child->child->next->next->content);
           vector<int> vc = get_INIT(n->child->next->next,num);
+          int index = 0;
           for (auto& i: vc)
             {
               APInt tmp(32,i);
-              Constant* a = Constant::getIntegerValue(Type::getInt32Ty(context), tmp);
-              builder.CreateStore(a, inst);
-              inst = builder.CreateGEP(inst,);
+              Constant* a = ConstantInt::get(Type::getInt32Ty(context), tmp);
+              vector<Value*> inds;
+              inds.push_back(ConstantInt::get(Type::getInt32Ty(context), 0));
+              inds.push_back(ConstantInt::get(Type::getInt32Ty(context), index));
+              Value* ptr = builder.CreateInBoundsGEP(inst, inds);
+              Value* s = builder.CreateStore(a,ptr);
+              ++index;
             }
         }
-	}
+        }*/
 }
 
 Value* code_INIT(Node* n)
@@ -1015,6 +1094,7 @@ void code_STMT(Node* n,Function* f)
 	{
 		Value* ret = code_EXP(n->child->next);
 		builder.CreateRet(ret);
+    retFlag = true;
     elseFlag = false;
     thenFlag = false;
 	}
@@ -1025,10 +1105,15 @@ void code_STMT(Node* n,Function* f)
 	}
 	else if (tmp_token == "IF")
     {
+      cout<<"I'm going to codegen IF"<<endl;
       bool tempThen = thenFlag;
       bool tempElse = elseFlag;
       thenFlag = true;
       elseFlag = true;
+      bool tempRet = retFlag;
+      retFlag = false;
+      bool tempContBreak = contbreakFlag;
+      contbreakFlag = false;
 		Value* condV = code_EXP(n->child->next->next);
 		Function* f = builder.GetInsertBlock()->getParent();
 		BasicBlock *thenBB = BasicBlock::Create(context, "then", f);
@@ -1040,11 +1125,16 @@ void code_STMT(Node* n,Function* f)
 		builder.SetInsertPoint(thenBB);
 		code_STMT(n->child->next->next->next->next, f);
     bool mergeFlag = false;
+    if (retFlag)
+      thenFlag = false;
+    if (contbreakFlag)
+      thenFlag = false;
     if (thenFlag)
       {
         builder.CreateBr(mergeBB);
         mergeFlag = true;
       }
+    retFlag = false;
     thenBB = builder.GetInsertBlock();
 		f->getBasicBlockList().push_back(elseBB);
 		builder.SetInsertPoint(elseBB);
@@ -1053,24 +1143,32 @@ void code_STMT(Node* n,Function* f)
 			Node* estmt = n->child->next->next->next->next->next->child->next;
 			code_STMT(estmt,f );
 		}
+    if (retFlag)
+      elseFlag = false;
+    if (contbreakFlag)
+      elseFlag = false;
     if(elseFlag)
       {
         builder.CreateBr(mergeBB);
         mergeFlag = true;
       }
 		elseBB = builder.GetInsertBlock();
+    retFlag = false;
     if (elseFlag || thenFlag)
       {
         f->getBasicBlockList().push_back(mergeBB);
         builder.SetInsertPoint(mergeBB); 
       }
+    retFlag = tempRet;
+    contbreakFlag = tempContBreak;
     thenFlag = tempThen;
     elseFlag = tempElse;
 	}
 	else if (tmp_token == "FOR")
 	{
 		Node* cond = n->child->next->next->next->next;
-		Value* exp1 = code_EXP(n->child->next->next);
+    if (n->child->next->next->child != NULL)
+      Value* exp1 = code_EXP(n->child->next->next);
 		BasicBlock* condBB = BasicBlock::Create(context, "Cond", f);
 		builder.CreateBr(condBB);
 		builder.SetInsertPoint(condBB);
@@ -1099,14 +1197,16 @@ void code_STMT(Node* n,Function* f)
 		verifyFunction(*f);
 	}
 	else if (tmp_token == "CONT")
-	{
+    {
+      contbreakFlag = true;
 		if (contBlock != NULL)
 		{
 			builder.CreateBr(contBlock);
 		}
 	}
 	else if (tmp_token == "BREAK")
-	{
+    {
+      contbreakFlag = true;
 		if (breakBlock != NULL)
 		{
 			builder.CreateBr(breakBlock);
