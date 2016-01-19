@@ -312,7 +312,7 @@ EXP:
 	| EXP SHRIGHTAN EXP {
 		$$ = Record("EXP", $1, $2, $3, NULL);
 	}
-	| EXP DOT EXP {
+	| EXP DOT ID {
 		$$ = Record("EXP", $1, $2, $3, NULL);
 	}
 	| EXP ASSIGNOP EXP {

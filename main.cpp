@@ -72,7 +72,12 @@ void errorOccur(string msg)
 	cerr << msg;
 	exit(0);
 }
+int temp;
 
+string getTemp()
+{
+  return to_string(temp++);
+}
 
 //using namespace llvm;
 typedef map<string, Value*> env;
@@ -96,6 +101,10 @@ ExecutionEngine* exeeng;
 bool isLeft = false;
 bool retFlag = false;
 bool contbreakFlag = false;
+map<string, Type*> structEnv;
+map<string, string > idstEnv;
+map<string, map<string, int> > stField;
+string structName;
 void remove_multi_termi(Function* f)
 {
 	for (auto b = f->begin(); b != f->end(); ++b)
@@ -271,6 +280,19 @@ Value* get_LHS(Node* n)
           loadinst->print(out);
           return loadinst;
         }
+      else if (strcmp("DOT", n->child->next->token) == 0)
+        {
+          string name = n->child->child->content;
+          string field = n->child->next->next->content;
+          int offset = stField[idstEnv[name]][field];
+          vecind.push_back(ConstantInt::get(Type::getInt32Ty(context),0));
+          vecind.push_back(ConstantInt::get(Type::getInt32Ty(context),offset));
+          ArrayRef<Value*> inds(vecind);
+          Value* loadinst = builder.CreateInBoundsGEP(nowEnv[name], inds);
+          loadinst->print(out);
+          cout<<"Get struct element as left succ!"<<endl;
+          return loadinst;
+        }
     }
 }
 
@@ -329,7 +351,11 @@ Value* code_EXP(Node* n)
 				errorOccur("No such function");
 			vector<Value* > args = code_ARGS(n->child->next->next);
       if (funcName == "write")
-        return builder.CreateCall(f,args);
+        {
+          for (auto &v:args)
+            v->print(out);
+          return builder.CreateCall(f,args); 
+        }
       else  if (funcName == "read")
         {
           cout<<"Read value:"<<n->child->next->next->child->token<<endl;
@@ -379,7 +405,21 @@ Value* code_EXP(Node* n)
       }
 	}
 	else if (childToken == "EXP")
-	{
+    {
+      if (strcmp(n->child->next->token, "DOT")==0)
+        {
+          string name = n->child->child->content;
+          string field = n->child->next->next->content;
+          int offset = stField[idstEnv[name]][field];
+          vector<Value*> vecind;
+          vecind.push_back(ConstantInt::get(Type::getInt32Ty(context),0));
+          vecind.push_back(ConstantInt::get(Type::getInt32Ty(context),offset));
+          ArrayRef<Value*> inds(vecind);
+          Value* loadinst = builder.CreateInBoundsGEP(nowEnv[name], inds);
+          loadinst->print(out);
+          cout<<"Get struct element as left succ!"<<endl;
+          return builder.CreateLoad(loadinst);
+        }
 		//env now = envs.back();
 		string op = n->child->next->token;
 		cout << "I'm in EXP EXP!" << op << n->child->token << n->child->next->next->token << endl;
@@ -592,9 +632,8 @@ Value* code_EXP(Node* n)
     {
       // Value* RHS = code_EXP(n->child->next->next);
 		Value* v = code_EXP(n->child->next);
-		Value* l = get_LHS(n->child->next);
 		Value* t = builder.CreateSub( ConstantInt::getSigned(Type::getInt32Ty(context), 0),v);
-		return builder.CreateStore(t, l);
+		return t;
 	}
 	else if (childToken == "INCR")
 	{
@@ -709,6 +748,44 @@ llvm::Value* code_EXTDEF(Node* n)
 	return NULL;
 }
 
+int get_DEFS_size(Node* n)
+{
+  int res = 0;
+  while(n->child != NULL)
+    {
+      Node* def = n->child;
+      res++;
+      n = def->next;
+    }
+  return res;
+}
+
+vector<string> get_DEFS_names (Node* n)
+{
+  vector<string> res;
+  while(n->child!= NULL)
+    {
+      Node* def = n->child;
+      Node* decs = def->child->next;
+      while (true)
+        {
+          Node* dec = decs->child;
+          string name = dec->child->child->content;
+          res.push_back(name);
+          if (dec->next == NULL)
+            break;
+          else
+            {
+              decs = dec->next->next;
+            }
+        }
+      n = def->next;
+    }
+  return res;
+}
+
+
+
 llvm::Type* code_SPEC(Node* n)
 {
 	string chi = n->child->token;
@@ -716,6 +793,55 @@ llvm::Type* code_SPEC(Node* n)
 	{
 		return Type::getInt32Ty(context);
 	}
+  else
+    {
+      Node* stspec = n->child;
+      if (stspec->child->next->next== NULL)
+        {
+          Type* t = structEnv[stspec->child->next->content];
+          structName = stspec->child->next->content;
+          if (t)
+            return t;
+          else
+            {
+              errorOccur("No such struct");
+            }
+        }
+      else
+        {
+          bool flag = false;
+          Node* opttag = stspec->child->next;
+          string name;
+          if (opttag->child != NULL)
+            {
+              name = opttag->child->content;
+              flag = true;
+            }
+          else
+            {
+              name = getTemp();
+            }
+          Node* defNode = stspec->child->next->next->next;
+          vector<string> names = get_DEFS_names(defNode);
+          int num = get_DEFS_size(defNode);
+          cout<<"A struct with "<<num<<" elements"<<endl;
+          for(auto i:names)
+            {
+              cout<<i<<"  ";
+            }
+          cout<<endl;
+          vector<Type*> elementsType;
+          for (int i = 0; i < num; i++)
+            {
+              // stField[name][names[i]] = i;
+              elementsType.push_back(Type::getInt32Ty(context));
+            }
+          StructType* t = StructType::create(context, elementsType, name.c_str());
+          structEnv[name] = t;
+          structName = name;
+          return t;
+        }
+    }
 }
 
 string code_FUN_Name(Node* n)
@@ -828,31 +954,42 @@ vector<int> get_INIT(Node* n, int len)
 void code_DEC_GLO(Node* n, Type* t)
 {
 	if (n->child->child->next == NULL)
-	{
-		string name = n->child->child->content;
-		if (n->child->next == NULL)
-      {
-        APInt i(32,0 ,true);
-        Constant* c = Constant::getIntegerValue(t, i);
-			Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, c, name);
-			globalEnv[name] = v;
-		}
-		else
-		{
-			cout << "I'm in global def with init" << endl;
-			string initToken = n->child->next->next->child->token;
-			if (initToken == "EXP")
-			{
-				int init = atoi(n->child->next->next->child->child->content);
-				cout << "In global init::" << init << endl;
-				APInt i(32, init, true);
-				Constant* c = Constant::getIntegerValue(t, i);
-				c->print(out);
-				Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, c, name);
-				globalEnv[name] = v;
-			}
-		}
-	}
+    {
+      if (t->isStructTy())
+        {
+          string name = n->child->child->content;
+          idstEnv[name] = structName;
+          Constant* c = ConstantAggregateZero::get(t);
+          Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, c,name);
+          globalEnv[name] = v;
+        }
+      else
+        {
+          string name = n->child->child->content;
+          if (n->child->next == NULL)
+            {
+              APInt i(32,0 ,true);
+              Constant* c  = Constant::getIntegerValue(t,i);
+              Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, c, name);
+              globalEnv[name] = v;
+            }
+          else
+            {
+              cout << "I'm in global def with init" << endl;
+              string initToken = n->child->next->next->child->token;
+              if (initToken == "EXP")
+                {
+                  int init = atoi(n->child->next->next->child->child->content);
+                  cout << "In global init::" << init << endl;
+                  APInt i(32, init, true);
+                  Constant* c = Constant::getIntegerValue(t, i);
+                  c->print(out);
+                  Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, c, name);
+                  globalEnv[name] = v;
+                }
+            }
+        }
+    }
 	else
 	{
 		if (n->child->next == NULL)
@@ -907,7 +1044,9 @@ void code_EXTVARS(Node* n,Type* t)
 	n = n->child;
 	//string tmp = dec->child->child->token;
 	while (true)
-	{
+    {
+      if (n == NULL)
+        break;
 		code_DEC_GLO(n,t);
 		if (n->next == NULL)
 			break;
@@ -955,28 +1094,39 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
 {
   if (n->child->child->next == NULL)
     {
-      string name = n->child->child->content;
-      cout << n->child->token << " " << n->child->child->content<<endl;
-      AllocaInst* inst = builder.CreateAlloca(t,NULL,n->child->child->content);
-      //env now = envs.back();
-      nowEnv[string(n->child->child->content)] = inst;
-      if (nowEnv[string(n->child->child->content)])
-        cout << "Insert succesully"<<n->child->child->content;
-      //envs.pop_back();
-      //envs.push_back(now);
-      //cout << "In DEC_INNER"<<envs.size() <<" "<<n->child->child->content <<now[string(n->child->child->content)]<< envs.back()[string(n->child->child->content)]<<endl;
-      if (n->child->next == NULL)
-        return;
+      if(t->isStructTy())
+        {
+          string name = n->child->child->content;
+          AllocaInst* inst = builder.CreateAlloca(t,NULL,n->child->child->content);
+          nowEnv[name] = inst;
+          idstEnv[name] = structName;
+        }
       else
         {
-          Node* init = n->child->next->next;
-          if (strcmp("EXP", init->child->token) == 0)
+          string name = n->child->child->content;
+          cout << n->child->token << " " << n->child->child->content<<endl;
+          AllocaInst* inst = builder.CreateAlloca(t,NULL,n->child->child->content);
+          //env now = envs.back();
+          nowEnv[string(n->child->child->content)] = inst;
+          if (nowEnv[string(n->child->child->content)])
+            cout << "Insert succesully"<<n->child->child->content;
+          //envs.pop_back();
+          //envs.push_back(now);
+          //cout << "In DEC_INNER"<<envs.size() <<" "<<n->child->child->content <<now[string(n->child->child->content)]<< envs.back()[string(n->child->child->content)]<<endl;
+          if (n->child->next == NULL)
+            return;
+          else
             {
-              cout << n->child->next->next->token << endl;
-              Value* v = code_INIT(n->child->next->next);
-              builder.CreateStore(v, inst); 
-            }
+              Node* init = n->child->next->next;
+              if (strcmp("EXP", init->child->token) == 0)
+                {
+                  cout << n->child->next->next->token << endl;
+                  Value* v = code_INIT(n->child->next->next);
+                  builder.CreateStore(v, inst); 
+                }
+            }    
         }
+      
     }
   else
     {
@@ -1120,6 +1270,8 @@ void code_STMT(Node* n,Function* f)
 		BasicBlock *elseBB = BasicBlock::Create(context, "else");
 		BasicBlock *mergeBB = BasicBlock::Create(context, "ifcont");
 		breakBlock = mergeBB;
+    if (condV->getType() == Type::getInt32Ty(context))
+      condV = builder.CreateICmpNE(condV,ConstantInt::get(Type::getInt32Ty(context), 0, true));
 		builder.CreateCondBr(condV, thenBB, elseBB);
 		bool flag = (n->child->next->next->next->next->next->child != NULL);
 		builder.SetInsertPoint(thenBB);
@@ -1181,7 +1333,8 @@ void code_STMT(Node* n,Function* f)
 		BasicBlock* outLoopBB = BasicBlock::Create(context, "outloop");
 		breakBlock = outLoopBB;
 		//buidler.CreateBr(condBB);
-
+    if (condV->getType() == Type::getInt32Ty(context))
+      condV = builder.CreateICmpNE(condV,ConstantInt::get(Type::getInt32Ty(context), 0, true));
 		builder.CreateCondBr(condV, loopBB, outLoopBB);
 		Node* body = n->child->next->next->next->next->next->next->next->next;
 		builder.SetInsertPoint(loopBB);

@@ -6,15 +6,6 @@ int divide(int low, int high)
 	int temp=a[low];
 	for(;low!=high;)
 	{
-		for(;low<high && a[high]>=temp;)
-		{
-			--high;
-		}
-		if(low<high)
-		{
-			a[low]=a[high];
-			++low;
-		}
 		for(;low<high && a[low]<=temp;)
 		{
 			++low;
@@ -23,6 +14,15 @@ int divide(int low, int high)
 		{
 			a[high]=a[low];
 			--high;
+		}
+    	for(;low<high && a[high]>=temp;)
+		{
+            --high;
+		}
+		if(low<high)
+		{
+			a[low]=a[high];
+			++low;
 		}
 	}
 	a[low]=temp;

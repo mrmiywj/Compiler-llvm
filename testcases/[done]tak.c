@@ -7,4 +7,5 @@ int tak(int x, int y, int z)
 int main()
 {
 	write(tak(18,12,6));
+    return 0;
 }

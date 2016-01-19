@@ -9,4 +9,5 @@ int main()
 	int n;
 	read(n);
 	write(fact(n));
+    return 0;
 }
