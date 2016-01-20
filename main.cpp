@@ -7,12 +7,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
-#include "llvm/IR/Verifier.h"
+#include "llvm/IR/Instruction.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/raw_os_ostream.h"
+#include <llvm/Support/SourceMgr.h>
+#include "llvm/Support/ManagedStatic.h"
+#include "llvm/Support/TargetSelect.h"
+#include <llvm/Support/MemoryBuffer.h>
+#include "llvm/Support/raw_ostream.h"
+#include <llvm/Support/DynamicLibrary.h>
+#include "llvm/Support/Debug.h"
+#include <llvm/IRReader/IRReader.h>
 #include "llvm/IR/Verifier.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
@@ -97,7 +105,7 @@ raw_os_ostream out(cout) ;
 BasicBlock* breakBlock;
 BasicBlock* contBlock;
 env globalEnv;
-ExecutionEngine* exeeng;
+ExecutionEngine* ee;
 bool isLeft = false;
 bool retFlag = false;
 bool contbreakFlag = false;
@@ -1369,7 +1377,7 @@ void code_STMT(Node* n,Function* f)
 	}
 }
 
-
+RTDyldMemoryManager* RTDyldMM = NULL;
 
 int main(int argc, char* argv[])
 {
@@ -1380,10 +1388,29 @@ int main(int argc, char* argv[])
         head = parse(argv[1]);
     }
 	walkThrough(head, 1);
-    std::cout<<"Hhahaha";
+  //    std::cout<<"Hhahaha";
+  InitializeNativeTarget();
+  InitializeNativeTargetAsmPrinter();
+  InitializeNativeTargetAsmParser();
+  string ErrStr;
+  RTDyldMM = new SectionMemoryManager();
+
     // context = getGlobalContext();
     unique_ptr<Module> Owner = make_unique<Module>("Simple C", context);
     module = Owner.get();
+    ee = EngineBuilder(std::move(Owner))
+      .setEngineKind(EngineKind::JIT)
+      .setErrorStr(&ErrStr)
+      .setVerifyModules(true)
+      .setMCJITMemoryManager(std::unique_ptr<RTDyldMemoryManager>(RTDyldMM))
+      .setOptLevel(CodeGenOpt::Default)
+      .create();
+
+    if (ErrStr.length() != 0)
+      {
+        cerr<<"Create Engine Error!"<<endl<<ErrStr<<endl;
+      }
+    ee->finalizeObject();
     //exeeng = EngineBuilder(move(Owner)).create();
     //    vector<llvm::Type*> printf_arg_types;
     //    printf_arg_types.push_back(Type::getInt32Ty(context));
@@ -1409,6 +1436,16 @@ int main(int argc, char* argv[])
     // }
     //ArrayRef<GenericValue> mainarg;
     //exeeng->runFunction(mainFunc,mainarg);
+
+    //unit64_t func_addr = ee->getFunctionAddress("main");
+    Function* m = ee->FindFunctionNamed("main");
+    if (m == NULL)
+    {
+      cout<<"No main function"<<endl;
+    }
+    ArrayRef<GenericValue> arg;
+    m->print(out);
+    ee->runFunction(m,arg);
     module->dump();
     module->print(f,NULL);
 }
