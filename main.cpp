@@ -321,11 +321,13 @@ Value* code_EXP(Node* n)
 		return NULL;
 	cout << "In exp!!" << endl;
 	if (childToken == "INT")
-	{
-		string num = n->child->content;
-		int n = stoi(num);
-		cout << "In EXP INT ::" << n << endl;
-		return ConstantInt::get(Type::getInt32Ty(context), n);
+    {
+      char* p;
+      int num = strtol(n->child->content, &p, 0);
+      //string num = n->child->content;
+      //int n = stoi(num);
+		cout << "In EXP INT ::" << num << endl;
+		return ConstantInt::get(Type::getInt32Ty(context), num);
 	}
 	else if (childToken == "LP")
 	{
