@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Analysis/Passes.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/IRBuilder.h"
@@ -26,6 +28,14 @@
 #include "llvm/ExecutionEngine/MCJIT.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/ADT/Statistic.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/IR/Dominators.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/Transforms/Utils/PromoteMemToReg.h"
+#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
 //#include "smallc.tab.h"
 //#include "y.tab.h"
 using namespace std;
@@ -1378,7 +1388,7 @@ void code_STMT(Node* n,Function* f)
 }
 
 RTDyldMemoryManager* RTDyldMM = NULL;
-
+using namespace legacy;
 int main(int argc, char* argv[])
 {
     Node* head;
@@ -1398,14 +1408,14 @@ int main(int argc, char* argv[])
     // context = getGlobalContext();
     unique_ptr<Module> Owner = make_unique<Module>("Simple C", context);
     module = Owner.get();
-    ee = EngineBuilder(std::move(Owner))
-      .setEngineKind(EngineKind::JIT)
-      .setErrorStr(&ErrStr)
-      .setVerifyModules(true)
-      .setMCJITMemoryManager(std::unique_ptr<RTDyldMemoryManager>(RTDyldMM))
-      .setOptLevel(CodeGenOpt::Default)
-      .create();
-
+    ee = EngineBuilder(move(Owner))
+    .setEngineKind(EngineKind::JIT)
+    .setErrorStr(&ErrStr)
+    .setVerifyModules(true)
+    .setMCJITMemoryManager(std::unique_ptr<RTDyldMemoryManager>(RTDyldMM))
+    .setOptLevel(CodeGenOpt::Default)
+    .create();
+    //ExecutionEngine* ee = EngineBuilder(move(Owner)).create();
     if (ErrStr.length() != 0)
       {
         cerr<<"Create Engine Error!"<<endl<<ErrStr<<endl;
@@ -1441,11 +1451,28 @@ int main(int argc, char* argv[])
     Function* m = ee->FindFunctionNamed("main");
     if (m == NULL)
     {
-      cout<<"No main function"<<endl;
+          cout<<"No main function"<<endl;
     }
     ArrayRef<GenericValue> arg;
-    m->print(out);
-    ee->runFunction(m,arg);
+    // m->print(out);
+    //ee->runFunction(m,arg);
+    //delete ee;
+    FunctionPassManager* FPM = new FunctionPassManager(module);
+
+    //FPM->add(new DataLayout(*ee->getDataLayout()));
+    FPM->add(createBasicAliasAnalysisPass());
+    FPM->add(createPromoteMemoryToRegisterPass());
+    FPM->add(createInstructionCombiningPass());
+    FPM->add(createReassociatePass());
+    FPM->add(createGVNPass());
+    FPM->add(createCFGSimplificationPass());
+
+    FPM->doInitialization();
+    for (auto it=module->begin(); it != module->end(); ++it)
+      {
+        FPM->run(*it);
+      }
     module->dump();
     module->print(f,NULL);
+    //llvm_shutdown();
 }
