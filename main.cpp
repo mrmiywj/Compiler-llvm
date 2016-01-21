@@ -270,12 +270,12 @@ llvm::Value* code_PROGRAM(Node* n)
 
 Value* get_LHS(Node* n)
 {
-  cout<<"I'm in get_LHS"<<endl;
+  //  cout<<"I'm in get_LHS"<<endl;
   if (n->child->next == NULL)
     return nowEnv[string(n->child->content)];
   else
     {
-      cout<<"Hey I'm here, get array element as lsh"<<endl;
+      //cout<<"Hey I'm here, get array element as lsh"<<endl;
       vector<Value*> vecind;
       if (strcmp("ARRS", n->child->next->token) == 0)
         {
@@ -295,7 +295,7 @@ Value* get_LHS(Node* n)
           vecind.push_back(v);
           ArrayRef<Value*> inds(vecind);
           Value* loadinst = builder.CreateInBoundsGEP(nowEnv[name], inds);
-          loadinst->print(out);
+          //loadinst->print(out);
           return loadinst;
         }
       else if (strcmp("DOT", n->child->next->token) == 0)
@@ -307,11 +307,12 @@ Value* get_LHS(Node* n)
           vecind.push_back(ConstantInt::get(Type::getInt32Ty(context),offset));
           ArrayRef<Value*> inds(vecind);
           Value* loadinst = builder.CreateInBoundsGEP(nowEnv[name], inds);
-          loadinst->print(out);
-          cout<<"Get struct element as left succ!"<<endl;
+          //loadinst->print(out);
+          //cout<<"Get struct element as left succ!"<<endl;
           return loadinst;
         }
     }
+  return NULL;
 }
 
 vector<Value*> code_ARGS(Node* n)
@@ -334,17 +335,17 @@ vector<Value*> code_ARGS(Node* n)
 Value* code_EXP(Node* n)
 {
 	string childToken = n->child->token;
-	cout << childToken<< endl;
+	//cout << childToken<< endl;
 	if (n->child == NULL)
 		return NULL;
-	cout << "In exp!!" << endl;
+	//cout << "In exp!!" << endl;
 	if (childToken == "INT")
     {
       char* p;
       int num = strtol(n->child->content, &p, 0);
       //string num = n->child->content;
       //int n = stoi(num);
-		cout << "In EXP INT ::" << num << endl;
+      //cout << "In EXP INT ::" << num << endl;
 		return ConstantInt::get(Type::getInt32Ty(context), num);
 	}
 	else if (childToken == "LP")
@@ -357,28 +358,32 @@ Value* code_EXP(Node* n)
 		{
 			//env envNow = envs.back();
 			Value* v = nowEnv[string(n->child->content)];
-			cout << "In exp ID::" << n->child->content << endl;
+			//cout << "In exp ID::" << n->child->content << endl;
 			if (v != NULL)
 			{
 				return builder.CreateLoad(v, n->child->content);
 			}
+      else
+        {
+          errorOccur("No such identifier called" + string(n->child->content));
+        }
 		}
 		else if (strcmp("LP",n->child->next->token) == 0)
 		{
 			string funcName = n->child->content;
 			Function* f = module->getFunction(funcName);
 			if (f == 0)
-				errorOccur("No such function");
+				errorOccur("No such function called " + funcName);
 			vector<Value* > args = code_ARGS(n->child->next->next);
       if (funcName == "write")
         {
-          for (auto &v:args)
-            v->print(out);
+          //for (auto &v:args)
+            //v->print(out);
           return builder.CreateCall(f,args); 
         }
       else  if (funcName == "read")
         {
-          cout<<"Read value:"<<n->child->next->next->child->token<<endl;
+          //cout<<"Read value:"<<n->child->next->next->child->token<<endl;
           Value* v = get_LHS(n->child->next->next->child);
           ArrayRef<Value*> arg(v);
           return builder.CreateCall(f, arg);
@@ -388,7 +393,7 @@ Value* code_EXP(Node* n)
 		}
     else if (strcmp("ARRS", n->child->next->token) == 0)
       {
-        cout<<"I'm ID Array::"<<endl;
+        //cout<<"I'm ID Array::"<<endl;
         vector<Value*> vecindex;
         Node* arrs = n->child->next;
         vecindex.push_back(ConstantInt::get(Type::getInt32Ty(context),0));
@@ -407,16 +412,21 @@ Value* code_EXP(Node* n)
         //      for (auto i:inds)
         //          i->print(out);
         string name = n->child->content;
-        cout<<"Array name::"<<name<<endl;
+        //cout<<"Array name::"<<name<<endl;
         Value* pt = nowEnv[name];
+       
         if (pt)
-          cout<<"I found array ptr"<<endl;
+          {
+        
+          }
+          //cout<<"I found array ptr"<<endl;
         else
           {
-            cout<<"I cant find array ptr"<<endl;
-            exit(-1);
+            //cout<<"I cant find array ptr"<<endl;
+            errorOccur("Can't find array named "+ name);
+            //exit(-1);
           }
-        pt->print(out);
+        //pt->print(out);
         Value* eleptr=  builder.CreateInBoundsGEP(pt, inds);
         //   if (isLeft)
         //     return eleptr;
@@ -436,17 +446,17 @@ Value* code_EXP(Node* n)
           vecind.push_back(ConstantInt::get(Type::getInt32Ty(context),offset));
           ArrayRef<Value*> inds(vecind);
           Value* loadinst = builder.CreateInBoundsGEP(nowEnv[name], inds);
-          loadinst->print(out);
-          cout<<"Get struct element as left succ!"<<endl;
+          //loadinst->print(out);
+          //cout<<"Get struct element as left succ!"<<endl;
           return builder.CreateLoad(loadinst);
         }
 		//env now = envs.back();
 		string op = n->child->next->token;
-		cout << "I'm in EXP EXP!" << op << n->child->token << n->child->next->next->token << endl;
+		//cout << "I'm in EXP EXP!" << op << n->child->token << n->child->next->next->token << endl;
 		if (op == "PLUS")
       {		Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
-			cout << "IN EXP EXP PULS::" << endl;
+        //cout << "IN EXP EXP PULS::" << endl;
 			Value* ret = builder.CreateAdd(LHS, RHS);
 			return ret;
 		}
@@ -617,7 +627,7 @@ Value* code_EXP(Node* n)
         {
           Value* LHS = code_EXP(n->child);
           Value* RHS = code_EXP(n->child->next->next);
-				cout << "In PLUSAN!!" << endl;
+          //cout << "In PLUSAN!!" << endl;
 				Value* tv = builder.CreateAdd(LHS, RHS);
 				Value* l = get_LHS(n->child);
 				return builder.CreateStore(tv, l);
@@ -666,9 +676,9 @@ Value* code_EXP(Node* n)
 	{
 		Value* v = code_EXP(n->child->next);
 		Value* l = get_LHS(n->child->next);
-    cout<<"I'm in DECR::"<<endl;
+    //cout<<"I'm in DECR::"<<endl;
 		Value* t = builder.CreateSub(v, ConstantInt::getSigned(Type::getInt32Ty(context), 1));
-    cout<<"CreateSub succ!"<<endl;
+    //cout<<"CreateSub succ!"<<endl;
     Value* ret = builder.CreateStore(t,l);
     return ret;
 		//return builder.CreateStore(t, l);
@@ -676,15 +686,15 @@ Value* code_EXP(Node* n)
 	else if (childToken == "BITNOT")
 	{
 		Value* v = code_EXP(n->child->next);
-		Value* l = get_LHS(n->child->next);
-		Value* t = builder.CreateXor(v, ConstantInt::getSigned(Type::getInt32Ty(context), -1));
-		return builder.CreateStore(t, l);
+		//Value* l = get_LHS(n->child->next);
+    return builder.CreateXor(v, ConstantInt::getSigned(Type::getInt32Ty(context), -1));
+		//return builder.CreateStore(t, l);
 	}
 	else if (childToken == "LOGNOT")
     {
-      cout<<"Yep I'm in LOGNOT!!"<<endl;
+      //cout<<"Yep I'm in LOGNOT!!"<<endl;
 		Value* v = code_EXP(n->child->next);
-		Value* l = get_LHS(n->child->next);
+		//Value* l = get_LHS(n->child->next);
     return builder.CreateICmpEQ(v, ConstantInt::getSigned(Type::getInt32Ty(context),0));
     //   	Value* t = builder.CreateICmpEQ(v, ConstantInt::getSigned(Type::getInt32Ty(context), 0));
     //	return builder.CreateStore(t, l);
@@ -715,9 +725,9 @@ void set_Func_Env(Function* f, vector<string> argsName, vector<Type*> argsType ,
 	//builder.CreateStore(f->arg_begin(), alloca);
 	for (Function::arg_iterator AI = f->arg_begin(); i!= argsType.size(); ++AI,++i)
 	{
-		AI->print(out);
+		//AI->print(out);
 		AllocaInst* alloca = builder.CreateAlloca(argsType[i], 0, argsName[i].c_str());
-		alloca->print(out);
+		//alloca->print(out);
 		AI->setName(argsName[i].c_str());
 		builder.CreateStore(AI, alloca);
 		//fenv[argsName[i]] = alloca;
@@ -735,25 +745,29 @@ llvm::Value* code_EXTDEF(Node* n)
 	{
 		Type* retType = code_SPEC(n->child);
 		string funcName = code_FUN_Name(n->child->next);
+    if (fEnv.find(funcName) != fEnv.end())
+      {
+        errorOccur("Function " + funcName+" has been declared before!");
+      }
 		std::vector<Type*> argsType = code_FUNC_ARG_Type(n->child->next);
-		for (auto& i : argsType)
-		{
+		//for (auto& i : argsType)
+		//{
 			//cout << "Herere !";
 			//i->print(out);
-		}
+		//}
 		std::vector<string> argsName = code_FUNC_ARG_Name(n->child->next);
 		FunctionType* funcType = FunctionType::get(retType, argsType, false);
 		//funcType->print(out);
 		Function* f = Function::Create(funcType, Function::ExternalLinkage, funcName.c_str(), module);
 		unsigned idx = 0;
-		cout << "Function Def::"<<argsName.size()<<" and "<<argsType.size();
-		cout << f->arg_size() << endl;
-		for (auto AI = f->arg_begin(); idx != argsName.size();++AI, ++idx)
-		{
+		//cout << "Function Def::"<<argsName.size()<<" and "<<argsType.size();
+		//cout << f->arg_size() << endl;
+		//for (auto AI = f->arg_begin(); idx != argsName.size();++AI, ++idx)
+		//{
 			//cout << argsName[idx];
 			//AI->setName(argsName[idx]);
 			//namedValues[argsName[idx]] = &a;
-		}
+		//}
 		set_Func_Env(f, argsName, argsType, funcName);
 		//cout << endl;
 		fEnv[funcName] = f;
@@ -844,7 +858,7 @@ llvm::Type* code_SPEC(Node* n)
           Node* defNode = stspec->child->next->next->next;
           vector<string> names = get_DEFS_names(defNode);
           int num = get_DEFS_size(defNode);
-          cout<<"A struct with "<<num<<" elements"<<endl;
+          //cout<<"A struct with "<<num<<" elements"<<endl;
           for(auto i:names)
             {
               cout<<i<<"  ";
@@ -862,6 +876,7 @@ llvm::Type* code_SPEC(Node* n)
           return t;
         }
     }
+  return NULL;
 }
 
 string code_FUN_Name(Node* n)
@@ -906,7 +921,7 @@ vector<string> code_PARA_ARG_Name(Node* n)
 	{
 		Node* para = n->child;
 		string t = para->child->next->child->content;
-		cout << t << endl;
+		//cout << t << endl;
 		ret.push_back(t);
 		if (para->next == NULL)
 			break;
@@ -978,6 +993,10 @@ void code_DEC_GLO(Node* n, Type* t)
       if (t->isStructTy())
         {
           string name = n->child->child->content;
+          if (nowEnv.find(name) != nowEnv.end())
+            {
+              errorOccur("The identifier "+name+" has been declared before");
+            }
           idstEnv[name] = structName;
           Constant* c = ConstantAggregateZero::get(t);
           Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, c,name);
@@ -986,6 +1005,10 @@ void code_DEC_GLO(Node* n, Type* t)
       else
         {
           string name = n->child->child->content;
+          if (nowEnv.find(name) != nowEnv.end())
+            {
+              errorOccur("The identifier "+name+" has been declared before");
+            }
           if (n->child->next == NULL)
             {
               APInt i(32,0 ,true);
@@ -995,15 +1018,15 @@ void code_DEC_GLO(Node* n, Type* t)
             }
           else
             {
-              cout << "I'm in global def with init" << endl;
+              //cout << "I'm in global def with init" << endl;
               string initToken = n->child->next->next->child->token;
               if (initToken == "EXP")
                 {
                   int init = atoi(n->child->next->next->child->child->content);
-                  cout << "In global init::" << init << endl;
+                  //cout << "In global init::" << init << endl;
                   APInt i(32, init, true);
                   Constant* c = Constant::getIntegerValue(t, i);
-                  c->print(out);
+                  //c->print(out);
                   Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, c, name);
                   globalEnv[name] = v;
                 }
@@ -1014,10 +1037,14 @@ void code_DEC_GLO(Node* n, Type* t)
 	{
 		if (n->child->next == NULL)
 		{
-			cout << "I want to declare a global array!" << endl;
+			//cout << "I want to declare a global array!" << endl;
 			Type* t = code_VAR_ARRAY_TYPE(n->child);
-			t->print(out);
+			//t->print(out);
 			string name = get_VAR_Name(n);
+      if (nowEnv.find(name) != nowEnv.end())
+        {
+          errorOccur("The identifier "+name+" has been declared before");
+        }
       int len = atoi(n->child->child->next->next->content);
       vector<Constant*> cv;
       for (int i = 0; i < len; i++)
@@ -1036,6 +1063,10 @@ void code_DEC_GLO(Node* n, Type* t)
 			cout<<"I want to declare a global array with init!"<<endl;
 			Type* t = code_VAR_ARRAY_TYPE(n->child);
 			string name = get_VAR_Name(n);
+      if (nowEnv.find(name) != nowEnv.end())
+        {
+          errorOccur("The identifier "+name+" has been declared before");
+        }
 			int len = atoi(n->child->child->next->next->content);
 			vector<int> initialvalue = get_INIT(n->child->next->next, len);
 			vector<Constant*> cv;
@@ -1047,7 +1078,7 @@ void code_DEC_GLO(Node* n, Type* t)
 			}
 			ArrayRef<Constant*> ar(cv);
 			Constant* conarr = ConstantArray::get(cast<ArrayType>(t), ar);
-			conarr->print(out);
+			//conarr->print(out);
 			Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, conarr, name);
       globalEnv[name] = v;
 		}
@@ -1117,6 +1148,11 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
       if(t->isStructTy())
         {
           string name = n->child->child->content;
+          auto it = nowEnv.find(name);
+          if (it != nowEnv.end())
+            {
+              errorOccur("You have declared " + name+" before");
+            }
           AllocaInst* inst = builder.CreateAlloca(t,NULL,n->child->child->content);
           nowEnv[name] = inst;
           idstEnv[name] = structName;
@@ -1124,23 +1160,30 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
       else
         {
           string name = n->child->child->content;
-          cout << n->child->token << " " << n->child->child->content<<endl;
+          auto it = nowEnv.find(name);
+          if (it != nowEnv.end())
+            {
+              errorOccur("You have declared " + name+" before");
+            }
+          //cout << n->child->token << " " << n->child->child->content<<endl;
           AllocaInst* inst = builder.CreateAlloca(t,NULL,n->child->child->content);
           //env now = envs.back();
           nowEnv[string(n->child->child->content)] = inst;
           if (nowEnv[string(n->child->child->content)])
-            cout << "Insert succesully"<<n->child->child->content;
+            //cout << "Insert succesully"<<n->child->child->content;
           //envs.pop_back();
           //envs.push_back(now);
           //cout << "In DEC_INNER"<<envs.size() <<" "<<n->child->child->content <<now[string(n->child->child->content)]<< envs.back()[string(n->child->child->content)]<<endl;
-          if (n->child->next == NULL)
-            return;
+            if (n->child->next == NULL)
+              {
+                return; 
+              }
           else
             {
               Node* init = n->child->next->next;
               if (strcmp("EXP", init->child->token) == 0)
                 {
-                  cout << n->child->next->next->token << endl;
+                  //cout << n->child->next->next->token << endl;
                   Value* v = code_INIT(n->child->next->next);
                   builder.CreateStore(v, inst); 
                 }
@@ -1152,12 +1195,17 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
     {
       int arrlen = atoi(n->child->child->next->next->content);
       string name = n->child->child->child->content;
-      cout<<"I'm allocating array::"<<name<<endl;
+      auto it = nowEnv.find(name);
+      if (it != nowEnv.end())
+        {
+          errorOccur("You have declared " + name+" before");
+        }
+      //cout<<"I'm allocating array::"<<name<<endl;
       AllocaInst* inst = builder.CreateAlloca(ArrayType::get(t,arrlen),NULL, n->child->child->child->content);
-      inst->print(out);
+      //inst->print(out);
       nowEnv[name] = inst;
       if (nowEnv[name])
-        cout<<"Alloca array successfully"<<endl;
+        //cout<<"Alloca array successfully"<<endl;
       if (n->child->next == NULL)
         return;
       else
@@ -1230,7 +1278,7 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
 Value* code_INIT(Node* n)
 {
 	string token = n->child->token;
-	cout << "INIT::" << n->child->token << endl;
+	//cout << "INIT::" << n->child->token << endl;
 	if (token == "EXP")
 	{
 		return code_EXP(n->child);
@@ -1255,7 +1303,7 @@ void code_STMTS(Node* n, Function* f)
 void code_STMT(Node* n,Function* f)
 {
 	string tmp_token = n->child->token;
-	cout << tmp_token << endl;
+	//cout << tmp_token << endl;
 	if (tmp_token == "STMTBLOCK")
 	{
 		code_STMTBLOCK(n->child, f);
@@ -1270,7 +1318,7 @@ void code_STMT(Node* n,Function* f)
 	}
 	else if (tmp_token == "EXP")
 	{
-		cout << "I'm in STMT EXP!!" << endl;
+		//cout << "I'm in STMT EXP!!" << endl;
 		Value* v = code_EXP(n->child);
 	}
 	else if (tmp_token == "IF")
@@ -1397,6 +1445,10 @@ int main(int argc, char* argv[])
     {
         head = parse(argv[1]);
     }
+    else
+      {
+        errorOccur("Please execute like ./prog (your file name)");
+      }
 	walkThrough(head, 1);
   //    std::cout<<"Hhahaha";
   InitializeNativeTarget();
