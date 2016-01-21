@@ -1,8 +1,6 @@
 int main()
 {
-    if (1>2)
-        return 1;
-    else
-        write(2);
+    int x = 1;
+    x = 2;
     return 0;
 }

@@ -101,6 +101,7 @@ string getTemp()
 typedef map<string, Value*> env;
 typedef map<string, Type*> typeEnv;
 
+//Some global variables to record information
 LLVMContext& context = getGlobalContext();
 Module* module;
 IRBuilder<> builder(getGlobalContext());
@@ -123,7 +124,10 @@ map<string, Type*> structEnv;
 map<string, string > idstEnv;
 map<string, map<string, int> > stField;
 string structName;
-void remove_multi_termi(Function* f)
+
+
+
+/*void remove_multi_termi(Function* f)
 {
 	for (auto b = f->begin(); b != f->end(); ++b)
 	{
@@ -139,17 +143,18 @@ void remove_multi_termi(Function* f)
 			}
 		}
 	}
-}
+}*/
 
 
-AllocaInst* CreateEntryBlockAlloca(Function* f,string varName, Type* t)
+/*AllocaInst* CreateEntryBlockAlloca(Function* f,string varName, Type* t)
 {
 	f->getEntryBlock().begin();
 	IRBuilder<> tmpB(&(f->getEntryBlock()), f->getEntryBlock().begin());
 	return tmpB.CreateAlloca(t, 0, varName.c_str());
 	return NULL;
-}
+}*/
 
+//Record the printf function
 Function* createPrintfFunction()
 {
   vector<Type*> printf_arg_types;
@@ -164,7 +169,7 @@ Function* createPrintfFunction()
 }
 
 
-
+//Record the write function
 Function* createWriteFunction(Function* printFn)
 {
   vector<Type*> echo_arg_types;
@@ -200,6 +205,8 @@ Function* createWriteFunction(Function* printFn)
   return func;
 }
 
+
+//Register the scanf function
 llvm::Function* createScanfFunction()
 {
     std::vector<llvm::Type*> scanf_arg_types;
@@ -218,6 +225,7 @@ llvm::Function* createScanfFunction()
     return func;
 }
 
+//Record the read function
 Function* createReadFunction(llvm::Function* scanfFn)
 {
     std::vector<llvm::Type*> read_arg_types; //no arg
@@ -261,35 +269,30 @@ Function* createReadFunction(llvm::Function* scanfFn)
     return func;
 }
 
+
+//generate IR at PROGRAM
 llvm::Value* code_PROGRAM(Node* n)
 {
 
 	return code_EXTDEFS(n->child);
-
 }
 
+
+//For some assign expression, we should get the left hand expression as pointer.
+//So it is different from the code_EXP;
 Value* get_LHS(Node* n)
 {
-  //  cout<<"I'm in get_LHS"<<endl;
   if (n->child->next == NULL)
     return nowEnv[string(n->child->content)];
   else
     {
       //cout<<"Hey I'm here, get array element as lsh"<<endl;
       vector<Value*> vecind;
+      //if the LHS is an array reference
       if (strcmp("ARRS", n->child->next->token) == 0)
         {
           string name = n->child->content;
           Node* arrs = n->child->next;
-          // while (arrs != NULL)
-          //{
-          //  if (arrs->child == NULL)
-          //    break;
-          //  Node* arr = arrs->child->next;
-          //  Value* v = code_EXP(arr->next);
-          //  vecind.push_back(v);
-          //  arrs = arrs->child->next->next->next;
-          //}
           vecind.push_back(ConstantInt::get(Type::getInt32Ty(context),0));
           Value* v = code_EXP(arrs->child->next);
           vecind.push_back(v);
@@ -298,6 +301,7 @@ Value* get_LHS(Node* n)
           //loadinst->print(out);
           return loadinst;
         }
+      //if the LHS is a struct member reference
       else if (strcmp("DOT", n->child->next->token) == 0)
         {
           string name = n->child->child->content;
@@ -315,6 +319,7 @@ Value* get_LHS(Node* n)
   return NULL;
 }
 
+//Get the arguments of a function call
 vector<Value*> code_ARGS(Node* n)
 {
 	vector<Value*> ret;
@@ -332,6 +337,7 @@ vector<Value*> code_ARGS(Node* n)
 	return ret;
 }
 
+//Generate the code for EXP
 Value* code_EXP(Node* n)
 {
 	string childToken = n->child->token;
@@ -368,6 +374,7 @@ Value* code_EXP(Node* n)
           errorOccur("No such identifier called" + string(n->child->content));
         }
 		}
+    //Generate code for function call
 		else if (strcmp("LP",n->child->next->token) == 0)
 		{
 			string funcName = n->child->content;
@@ -375,6 +382,16 @@ Value* code_EXP(Node* n)
 			if (f == 0)
 				errorOccur("No such function called " + funcName);
 			vector<Value* > args = code_ARGS(n->child->next->next);
+      int size = 0;
+      for (auto it=f->arg_begin(); it != f->arg_end(); ++it)
+        {
+          ++size;
+        }
+      //check the arguments size
+      if (size != args.size())
+        {
+          errorOccur("Function call " + funcName+" arguments size does not match");
+        }
       if (funcName == "write")
         {
           //for (auto &v:args)
@@ -391,6 +408,7 @@ Value* code_EXP(Node* n)
       else
         return builder.CreateCall(f, args, "calltmp");
 		}
+    //Generate code for array element
     else if (strcmp("ARRS", n->child->next->token) == 0)
       {
         //cout<<"I'm ID Array::"<<endl;
@@ -436,6 +454,7 @@ Value* code_EXP(Node* n)
 	}
 	else if (childToken == "EXP")
     {
+      //Generate code for struct member referece 
       if (strcmp(n->child->next->token, "DOT")==0)
         {
           string name = n->child->child->content;
@@ -456,7 +475,10 @@ Value* code_EXP(Node* n)
 		if (op == "PLUS")
       {		Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
-        //cout << "IN EXP EXP PULS::" << endl;
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateAdd(LHS, RHS);
 			return ret;
 		}
@@ -464,6 +486,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateSub(LHS, RHS);
 			return ret;
 		}
@@ -471,6 +497,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateMul(LHS, RHS);
 			return ret;
 		}
@@ -478,6 +508,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+         } 
 			Value* ret = builder.CreateSDiv(LHS, RHS);
 			return ret;
 		}
@@ -485,6 +519,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateSRem(LHS, RHS);
 			return ret;
 		}
@@ -492,6 +530,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateShl(LHS, RHS);
 			return ret;
 		}
@@ -499,6 +541,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateLShr(LHS, RHS);
 			return ret;
 		}
@@ -506,6 +552,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateICmpSGT(LHS, RHS);
 			return ret;
 		}
@@ -513,6 +563,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateICmpSGE(LHS, RHS);
 			return ret;
 		}
@@ -520,6 +574,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateICmpSLT(LHS, RHS);
 			return ret;
 		}
@@ -527,6 +585,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateICmpSLE(LHS, RHS);
 			return ret;
 		}
@@ -534,6 +596,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateICmpEQ(LHS, RHS);
 			return ret;
 		}
@@ -541,6 +607,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateICmpNE(LHS, RHS);
 			return ret;
 		}
@@ -548,6 +618,10 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			Value* ret = builder.CreateAnd(LHS, RHS);
 			return ret;
 		}
@@ -555,24 +629,34 @@ Value* code_EXP(Node* n)
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			return builder.CreateXor(LHS, RHS);
 		}
 		else if (op == "BITOR")
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+        if (!(LHS->getType() == Type::getInt32Ty(context) && RHS->getType() == Type::getInt32Ty(context)))
+          {
+            errorOccur("Type error!");
+          }
 			return builder.CreateOr(LHS, RHS);
 		}
 		else if (op == "LOGAND")
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+
 			return builder.CreateAnd(LHS, RHS);
 		}
 		else if (op == "LOGOR")
       {
         Value* LHS = code_EXP(n->child);
         Value* RHS = code_EXP(n->child->next->next);
+
 			return builder.CreateOr(LHS, RHS);
 		}
 		else
@@ -580,7 +664,7 @@ Value* code_EXP(Node* n)
 			if (op == "ASSIGNOP")
         {
           Value* RHS = code_EXP(n->child->next->next);
-				Value* LHS = get_LHS(n->child);
+          Value* LHS = get_LHS(n->child);
 				return builder.CreateStore(RHS, LHS);
 			}
 			else if (op == "BANDAN")
@@ -703,6 +787,8 @@ Value* code_EXP(Node* n)
 	return NULL;
 }
 
+
+//Generate code for EXTDEFS
 llvm::Value* code_EXTDEFS(Node* n)
 {
 	if (n->child == NULL)
@@ -713,6 +799,7 @@ llvm::Value* code_EXTDEFS(Node* n)
 	return NULL;
 }
 
+//When we register a function, we should set up the environment and so on.
 void set_Func_Env(Function* f, vector<string> argsName, vector<Type*> argsType , string name)
 {
 	BasicBlock *BB = BasicBlock::Create(context, "entry", f);
@@ -737,6 +824,7 @@ void set_Func_Env(Function* f, vector<string> argsName, vector<Type*> argsType ,
 	//envs.push_back(now);
 }
 
+//Create global variables or functions 
 llvm::Value* code_EXTDEF(Node* n)
 {
 	Node* snd = n->child->next;
@@ -819,7 +907,7 @@ vector<string> get_DEFS_names (Node* n)
 }
 
 
-
+//Get the spec Type
 llvm::Type* code_SPEC(Node* n)
 {
 	string chi = n->child->token;
@@ -889,6 +977,7 @@ vector<Type*> code_FUNC_ARG_Type(Node* n)
 	return code_PARAS_Type(n->child->next->next);
 }
 
+//Get the parameters' types
 vector<Type*> code_PARAS_Type(Node* n)
 {
 	vector<Type*> ret;
@@ -907,11 +996,13 @@ vector<Type*> code_PARAS_Type(Node* n)
 	return ret;
 }
 
+//Get args' names
 vector<string> code_FUNC_ARG_Name(Node* n)
 {
 	return code_PARA_ARG_Name(n->child->next->next);
 }
 
+//Get paras' names
 vector<string> code_PARA_ARG_Name(Node* n)
 {
 	vector<string> ret;
@@ -930,6 +1021,7 @@ vector<string> code_PARA_ARG_Name(Node* n)
 	return ret;
 }
 
+//When we at the VAR Node, get the array type
 Type* code_VAR_ARRAY_TYPE(Node* n)
 {
 	string token = n->child->token;
@@ -945,6 +1037,7 @@ Type* code_VAR_ARRAY_TYPE(Node* n)
 
 }
 
+//When we are at the VAR node, get the identifier's name
 string get_VAR_Name(Node* n)
 {
 	string childToken = n->child->token;
@@ -957,6 +1050,7 @@ string get_VAR_Name(Node* n)
 	return n->content;
 }
 
+//If the variable has a initilized value, get it
 vector<int> get_INIT(Node* n, int len)
 {
 	vector<int> ret;
@@ -986,6 +1080,11 @@ vector<int> get_INIT(Node* n, int len)
 	
 }
 
+//declare the global variable
+//Note: A global variable must have a initilized value or it will be treated as a function !!!!
+//Note: A global variable must have a initilized value or it will be treated as a function!!!!
+//Note: A global variable must have a initilized value or it will be treated as a function !!!!
+//It's so important that I must say it three times.
 void code_DEC_GLO(Node* n, Type* t)
 {
 	if (n->child->child->next == NULL)
@@ -998,6 +1097,7 @@ void code_DEC_GLO(Node* n, Type* t)
               errorOccur("The identifier "+name+" has been declared before");
             }
           idstEnv[name] = structName;
+          //if it is a struct value 
           Constant* c = ConstantAggregateZero::get(t);
           Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, c,name);
           globalEnv[name] = v;
@@ -1086,6 +1186,7 @@ void code_DEC_GLO(Node* n, Type* t)
 	//builder.CreateLoad(val, v);
 }
 
+//code generator fro EXTVARS
 void code_EXTVARS(Node* n,Type* t)
 {
 	if (n == NULL)
@@ -1105,6 +1206,7 @@ void code_EXTVARS(Node* n,Type* t)
 	}
 }
 
+//When the definition is local
 void code_DEFS_INNER(Node* n, Function* f)
 {
 	if (n->child == NULL)
@@ -1140,7 +1242,7 @@ void code_DECS_INNER(Node* n, Function* f, Type* t)
 	}
 }
 
-
+//When the declaration is local
 void code_DEC_INNER(Node* n, Function* f, Type* t)
 {
   if (n->child->child->next == NULL)
@@ -1165,15 +1267,9 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
             {
               errorOccur("You have declared " + name+" before");
             }
-          //cout << n->child->token << " " << n->child->child->content<<endl;
           AllocaInst* inst = builder.CreateAlloca(t,NULL,n->child->child->content);
-          //env now = envs.back();
           nowEnv[string(n->child->child->content)] = inst;
           if (nowEnv[string(n->child->child->content)])
-            //cout << "Insert succesully"<<n->child->child->content;
-          //envs.pop_back();
-          //envs.push_back(now);
-          //cout << "In DEC_INNER"<<envs.size() <<" "<<n->child->child->content <<now[string(n->child->child->content)]<< envs.back()[string(n->child->child->content)]<<endl;
             if (n->child->next == NULL)
               {
                 return; 
@@ -1200,7 +1296,7 @@ void code_DEC_INNER(Node* n, Function* f, Type* t)
         {
           errorOccur("You have declared " + name+" before");
         }
-      //cout<<"I'm allocating array::"<<name<<endl;
+
       AllocaInst* inst = builder.CreateAlloca(ArrayType::get(t,arrlen),NULL, n->child->child->child->content);
       //inst->print(out);
       nowEnv[name] = inst;
@@ -1300,6 +1396,7 @@ void code_STMTS(Node* n, Function* f)
 	code_STMTS(n->child->next,f );
 }
 
+//Generate code for STMT
 void code_STMT(Node* n,Function* f)
 {
 	string tmp_token = n->child->token;
@@ -1321,6 +1418,10 @@ void code_STMT(Node* n,Function* f)
 		//cout << "I'm in STMT EXP!!" << endl;
 		Value* v = code_EXP(n->child);
 	}
+  /*Code generator for IF statement
+    If there is a RETURN OR BREAK OR CONTINUE in statement block
+    the block should not branch to ifcont block, for any basicblock could have only one terminator instruction
+   */
 	else if (tmp_token == "IF")
     {
       cout<<"I'm going to codegen IF"<<endl;
@@ -1437,20 +1538,29 @@ void code_STMT(Node* n,Function* f)
 
 RTDyldMemoryManager* RTDyldMM = NULL;
 using namespace legacy;
+
+/*
+  The main function of the compiler
+  Note: I want to add the support for the JIT. But it seems some problem with it.
+ */
 int main(int argc, char* argv[])
 {
     Node* head;
-    fout.open("out.ll");
-    if (argc == 2)
+    //fout.open("out.ll");
+    if (argc == 3)
     {
-        head = parse(argv[1]);
     }
     else
       {
         errorOccur("Please execute like ./prog (your file name)");
       }
+    head = parse(argv[1]);
+    fout.open(argv[2]);
 	walkThrough(head, 1);
   //    std::cout<<"Hhahaha";
+  /*
+    Add JIT support
+   */
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
   InitializeNativeTargetAsmParser();
@@ -1473,17 +1583,15 @@ int main(int argc, char* argv[])
         cerr<<"Create Engine Error!"<<endl<<ErrStr<<endl;
       }
     ee->finalizeObject();
-    //exeeng = EngineBuilder(move(Owner)).create();
-    //    vector<llvm::Type*> printf_arg_types;
-    //    printf_arg_types.push_back(Type::getInt32Ty(context));
-    //    FunctionType *printf_type = FunctionType::get(Type::getInt32Ty(context), printf_arg_types,true);
-    //    Function* printf_dec = Function::Create(printf_type, Function::ExternalLinkage,Twine("printf"), module);
+    /*
+      Register write and read function.
+     */
     Function* printfFunc = createPrintfFunction();
     Function* writeFunc = createWriteFunction(printfFunc);
     Function* scanfFunc = createScanfFunction();
     Function* readFunc = createReadFunction(scanfFunc);
     error_code err;
-    raw_fd_ostream f("out.ll", err,sys::fs::OpenFlags::F_RW);
+    raw_fd_ostream f(argv[2], err,sys::fs::OpenFlags::F_RW);
     //envs.push_back(globalEnv);
     code_PROGRAM(head);
     //for (auto f = module->begin(); f != module->end(); ++f)
@@ -1511,7 +1619,8 @@ int main(int argc, char* argv[])
     //delete ee;
     FunctionPassManager* FPM = new FunctionPassManager(module);
 
-    //FPM->add(new DataLayout(*ee->getDataLayout()));
+    /*Optimization of the code
+     */
     FPM->add(createBasicAliasAnalysisPass());
     FPM->add(createPromoteMemoryToRegisterPass());
     FPM->add(createInstructionCombiningPass());
