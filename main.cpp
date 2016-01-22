@@ -1621,12 +1621,12 @@ int main(int argc, char* argv[])
 
     /*Optimization of the code
      */
-    FPM->add(createBasicAliasAnalysisPass());
-    FPM->add(createPromoteMemoryToRegisterPass());
-    FPM->add(createInstructionCombiningPass());
-    FPM->add(createReassociatePass());
-    FPM->add(createGVNPass());
-    FPM->add(createCFGSimplificationPass());
+    //FPM->add(createBasicAliasAnalysisPass());
+    //FPM->add(createPromoteMemoryToRegisterPass());
+    //FPM->add(createInstructionCombiningPass());
+    //FPM->add(createReassociatePass());
+    //FPM->add(createGVNPass());
+    //FPM->add(createCFGSimplificationPass());
 
     FPM->doInitialization();
     for (auto it=module->begin(); it != module->end(); ++it)
