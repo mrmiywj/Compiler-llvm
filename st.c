@@ -1,18 +1,14 @@
-struct acrossthegreatxxxxwallwecanreacheverycornerintheworld
-{
+struct acrossthegreatxxxxwallwecanreacheverycornerintheworld {
 	int sigcomm;
 };
-
-struct haoehaoehaoewozhendehaoe
-{
+struct haoehaoehaoewozhendehaoe {
 	int huiguorou;
 	int huoguo;
 	int shaokao;
 	int tiaoshuitu;
 };
 
-struct double0
-{
+struct doubleO {
 	int GOOGLE;
 	int FACEBOOK;
 	int MICROSOFT;
@@ -20,19 +16,26 @@ struct double0
 	int YAHOO;
 };
 
-struct acrossthegreatxxxxwallwecanreacheverycornerintheworld A;
-struct acrossthegreatxxxxwallwecanreacheverycornerintheworld B;
+struct acrossthegreatxxxxwallwecanreacheverycornerintheworld A,B;
 struct haoehaoehaoewozhendehaoe C;
-struct double0 R;
-struct double0 G;
-struct double0 T;
+struct doubleO R,G,T;
 
 int main()
 {
-    struct double0 Q;
-    Q.YAHOO = 1;
-    G.YAHOO = Q.YAHOO;
+    struct doubleO Z;
+	read(T.GOOGLE);
+	read(A.sigcomm);
+	read(C.huoguo);
+	G.FACEBOOK=(T.GOOGLE^C.huoguo);
+	if(G.FACEBOOK==A.sigcomm)
+		C.huiguorou=215;
+	else
+		C.huiguorou=0;
+	write(C.huiguorou);
+	read(R.MICROSOFT);
+	if(R.MICROSOFT)
+		write(0xD7);
+	else
+		write(-0327);
 	return 0;
 }
-
-
