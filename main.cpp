@@ -955,7 +955,7 @@ llvm::Type* code_SPEC(Node* n)
           vector<Type*> elementsType;
           for (int i = 0; i < num; i++)
             {
-              // stField[name][names[i]] = i;
+              stField[name][names[i]] = i;
               elementsType.push_back(Type::getInt32Ty(context));
             }
           StructType* t = StructType::create(context, elementsType, name.c_str());
