@@ -1,5 +1,5 @@
-prog: lex.yy.o y.tab.o main.o
-	clang++ -g -std=c++11  main.o lex.yy.o y.tab.o `llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native` -o prog
+scc: lex.yy.o y.tab.o main.o
+	clang++ -g -std=c++11  main.o lex.yy.o y.tab.o `llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native` -o scc
 
 main.o: main.cpp
 	clang++ -g -c -std=c++11 main.cpp `llvm-config --cxxflags --system-libs --libs core mcjit native`  -o main.o 

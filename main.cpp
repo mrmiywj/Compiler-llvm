@@ -82,6 +82,7 @@ Useful functions to DEBUG;
 
 void errorOccur(string msg)
 {
+  fout<<"Error"<<endl;
 	fout.close();
 	fout.open("CompileError");
 	fout << "Error" << endl;
