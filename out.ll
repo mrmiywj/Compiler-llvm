@@ -1,8 +1,18 @@
 ; ModuleID = 'Simple C'
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 
+%acrossthegreatxxxxwallwecanreacheverycornerintheworld = type { i32 }
+%haoehaoehaoewozhendehaoe = type { i32, i32, i32, i32 }
+%doubleO = type { i32, i32, i32, i32, i32 }
+
 @.str = private constant [4 x i8] c"%d\0A\00"
 @.str.1 = private constant [3 x i8] c"%d\00"
+@A = global %acrossthegreatxxxxwallwecanreacheverycornerintheworld zeroinitializer
+@B = global %acrossthegreatxxxxwallwecanreacheverycornerintheworld zeroinitializer
+@C = global %haoehaoehaoewozhendehaoe zeroinitializer
+@R = global %doubleO zeroinitializer
+@G = global %doubleO zeroinitializer
+@T = global %doubleO zeroinitializer
 
 declare i32 @printf(i8*, ...)
 
@@ -22,23 +32,31 @@ entry:
 
 define i32 @main() {
 entry:
-  %x = alloca i32, align 4
-  %a = alloca [5 x i32], align 4
-  %0 = getelementptr inbounds [5 x i32], [5 x i32]* %a, i64 0, i64 0
-  store i32 1, i32* %0, align 4
-  %1 = getelementptr inbounds [5 x i32], [5 x i32]* %a, i64 0, i64 1
-  store i32 1, i32* %1, align 4
-  %2 = getelementptr inbounds [5 x i32], [5 x i32]* %a, i64 0, i64 2
-  store i32 1, i32* %2, align 4
-  %3 = getelementptr inbounds [5 x i32], [5 x i32]* %a, i64 0, i64 3
-  store i32 1, i32* %3, align 4
-  %4 = getelementptr inbounds [5 x i32], [5 x i32]* %a, i64 0, i64 4
-  store i32 1, i32* %4, align 4
-  call void @read(i32* nonnull %x)
-  %x2 = load i32, i32* %x, align 4
-  call void @write(i32 %x2)
-  call void @write(i32 8)
-  call void @write(i32 21)
-  call void @write(i32 1)
+  call void @read(i32* getelementptr inbounds (%doubleO, %doubleO* @T, i64 0, i32 0))
+  call void @read(i32* getelementptr inbounds (%acrossthegreatxxxxwallwecanreacheverycornerintheworld, %acrossthegreatxxxxwallwecanreacheverycornerintheworld* @A, i64 0, i32 0))
+  call void @read(i32* getelementptr inbounds (%haoehaoehaoewozhendehaoe, %haoehaoehaoewozhendehaoe* @C, i64 0, i32 0))
+  %0 = load i32, i32* getelementptr inbounds (%doubleO, %doubleO* @T, i64 0, i32 0), align 16
+  %1 = load i32, i32* getelementptr inbounds (%haoehaoehaoewozhendehaoe, %haoehaoehaoewozhendehaoe* @C, i64 0, i32 0), align 8
+  %2 = xor i32 %1, %0
+  store i32 %2, i32* getelementptr inbounds (%doubleO, %doubleO* @G, i64 0, i32 0), align 16
+  %3 = load i32, i32* getelementptr inbounds (%acrossthegreatxxxxwallwecanreacheverycornerintheworld, %acrossthegreatxxxxwallwecanreacheverycornerintheworld* @A, i64 0, i32 0), align 8
+  %4 = icmp eq i32 %2, %3
+  %. = select i1 %4, i32 215, i32 0
+  store i32 %., i32* getelementptr inbounds (%haoehaoehaoewozhendehaoe, %haoehaoehaoewozhendehaoe* @C, i64 0, i32 0), align 8
+  call void @write(i32 %.)
+  call void @read(i32* getelementptr inbounds (%doubleO, %doubleO* @R, i64 0, i32 0))
+  %5 = load i32, i32* getelementptr inbounds (%doubleO, %doubleO* @R, i64 0, i32 0), align 16
+  %6 = icmp eq i32 %5, 0
+  br i1 %6, label %else.2, label %then1
+
+then1:                                            ; preds = %entry
+  call void @write(i32 215)
+  br label %ifcont.3
+
+else.2:                                           ; preds = %entry
+  call void @write(i32 -215)
+  br label %ifcont.3
+
+ifcont.3:                                         ; preds = %else.2, %then1
   ret i32 0
 }

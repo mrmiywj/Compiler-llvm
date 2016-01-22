@@ -1154,7 +1154,7 @@ void code_DEC_GLO(Node* n, Type* t)
           cv.push_back(c);
         }
       ArrayRef<Constant*> ar(cv);
-      Constant* conarr = ConstantArray::get(cast<ArrayType>(t), ar);      
+      Constant* conarr = ConstantArray::get(cast<ArrayType>(t), ar);   
 			Value* v = new GlobalVariable(*module, t, false, GlobalValue::ExternalLinkage, conarr, name);
       globalEnv[name] = v;
 		}
